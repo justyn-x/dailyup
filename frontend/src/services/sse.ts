@@ -88,7 +88,7 @@ export async function streamFetch(
                 onProgress?.(parsed.phase, parsed.message);
                 break;
               case "done":
-                onDone(parsed);
+                onDone(parsed.full_result ?? parsed);
                 return;
               case "error":
                 onError(parsed);

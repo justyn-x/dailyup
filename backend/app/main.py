@@ -20,3 +20,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routers
+from app.api.projects import router as projects_router
+from app.api.settings import router as settings_router
+from app.api.plans import router as plans_router
+from app.api.chapters import router as chapters_router
+from app.api.assessments import router as assessments_router
+
+app.include_router(projects_router)
+app.include_router(settings_router)
+app.include_router(plans_router)
+app.include_router(chapters_router)
+app.include_router(assessments_router)
