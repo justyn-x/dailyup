@@ -1,7 +1,33 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Testing
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
 *.db
+
+# Environment
 .env
+.env.*
+
+# Frontend
 node_modules/
 dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Claude Code
 .claude/worktrees/
