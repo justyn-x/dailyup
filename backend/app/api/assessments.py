@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from starlette.responses import StreamingResponse
 
-from app.database import async_session
+import app.database as db
 from app.models import Assessment, Chapter, LearningMaterial
 from app.schemas import (
     AssessmentResponse,
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api", tags=["assessments"])
 @router.get("/chapters/{chapter_id}/assessment")
 async def get_assessment(chapter_id: int):
     """Get existing assessment for a chapter (404 if none)."""
-    async with async_session() as session:
+    async with db.async_session() as session:
         stmt = select(Assessment).where(Assessment.chapter_id == chapter_id)
         result = await session.execute(stmt)
         assessment = result.scalar_one_or_none()
@@ -48,7 +48,7 @@ async def get_assessment(chapter_id: int):
 @router.get("/assessments/{assessment_id}/result")
 async def get_assessment_result(assessment_id: int):
     """Get submitted assessment result (404 if not submitted)."""
-    async with async_session() as session:
+    async with db.async_session() as session:
         assessment = await session.get(Assessment, assessment_id)
         if not assessment:
             raise HTTPException(status_code=404, detail="考核不存在")
@@ -79,7 +79,7 @@ async def get_assessment_result(assessment_id: int):
 async def generate_assessment(chapter_id: int):
     """Generate an assessment for a chapter via SSE streaming."""
     # Pre-stream validation
-    async with async_session() as session:
+    async with db.async_session() as session:
         chapter = await session.get(Chapter, chapter_id)
         if not chapter:
             raise HTTPException(status_code=404, detail="章节不存在")
@@ -105,7 +105,7 @@ async def generate_assessment(chapter_id: int):
     async def event_generator():
         try:
             ai_service = AIService()
-            async with async_session() as session:
+            async with db.async_session() as session:
                 chapter = await session.get(Chapter, chapter_id)
                 stmt = select(LearningMaterial).where(
                     LearningMaterial.chapter_id == chapter_id
@@ -133,7 +133,7 @@ async def generate_assessment(chapter_id: int):
 async def submit_assessment(assessment_id: int, body: SubmitAnswerRequest):
     """Submit answers for an assessment and get AI evaluation via SSE streaming."""
     # Pre-stream validation
-    async with async_session() as session:
+    async with db.async_session() as session:
         assessment = await session.get(Assessment, assessment_id)
         if not assessment:
             raise HTTPException(status_code=404, detail="考核不存在")
@@ -148,7 +148,7 @@ async def submit_assessment(assessment_id: int, body: SubmitAnswerRequest):
     async def event_generator():
         try:
             ai_service = AIService()
-            async with async_session() as session:
+            async with db.async_session() as session:
                 stmt = (
                     select(Assessment)
                     .where(Assessment.id == assessment_id)

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from starlette.responses import StreamingResponse
 
-from app.database import async_session
+import app.database as db
 from app.models import LearningProject, LearningPlan, Chapter
 from app.schemas import PlanResponse, ChapterSummary
 from app.services.ai_service import AIService
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api", tags=["plans"])
 async def generate_plan(project_id: int):
     """Generate a learning plan for the project via SSE streaming."""
     # Pre-stream validation
-    async with async_session() as session:
+    async with db.async_session() as session:
         project = await session.get(LearningProject, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="项目不存在")
@@ -34,7 +34,7 @@ async def generate_plan(project_id: int):
     async def event_generator():
         try:
             ai_service = AIService()
-            async with async_session() as session:
+            async with db.async_session() as session:
                 project = await session.get(LearningProject, project_id)
                 async for sse_event in ai_service.generate_learning_plan(
                     session, project
@@ -53,7 +53,7 @@ async def generate_plan(project_id: int):
 @router.get("/projects/{project_id}/plan", response_model=PlanResponse)
 async def get_plan(project_id: int):
     """Get the learning plan with chapters for a project."""
-    async with async_session() as session:
+    async with db.async_session() as session:
         project = await session.get(LearningProject, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="项目不存在")

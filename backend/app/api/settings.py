@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import async_session
+import app.database as db
 from app.models import LLMSettings
 from app.schemas import SettingsResponse, UpdateSettingsRequest
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
 async def get_db():
-    async with async_session() as session:
+    async with db.async_session() as session:
         yield session
 
 

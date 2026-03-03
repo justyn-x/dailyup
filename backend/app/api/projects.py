@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.database import async_session
+import app.database as db
 from app.models import LearningProject, LearningPlan, Chapter, Assessment
 from app.schemas import (
     CreateProjectRequest,
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 async def get_db():
-    async with async_session() as session:
+    async with db.async_session() as session:
         yield session
 
 

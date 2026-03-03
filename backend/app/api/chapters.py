@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from starlette.responses import StreamingResponse
 
-from app.database import async_session
+import app.database as db
 from app.models import Chapter, LearningMaterial, LearningPlan, LearningProject
 from app.schemas import ChapterResponse, MaterialResponse
 from app.services.ai_service import AIService
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api", tags=["chapters"])
 @router.get("/chapters/{chapter_id}", response_model=ChapterResponse)
 async def get_chapter(chapter_id: int):
     """Get chapter details by ID."""
-    async with async_session() as session:
+    async with db.async_session() as session:
         chapter = await session.get(Chapter, chapter_id)
         if not chapter:
             raise HTTPException(status_code=404, detail="章节不存在")
@@ -38,7 +38,7 @@ async def get_chapter(chapter_id: int):
 @router.get("/chapters/{chapter_id}/material", response_model=MaterialResponse)
 async def get_material(chapter_id: int):
     """Get the learning material for a chapter."""
-    async with async_session() as session:
+    async with db.async_session() as session:
         chapter = await session.get(Chapter, chapter_id)
         if not chapter:
             raise HTTPException(status_code=404, detail="章节不存在")
@@ -78,7 +78,7 @@ async def _get_chapter_with_project(session, chapter_id: int):
 async def generate_material(chapter_id: int):
     """Generate learning material for a chapter via SSE streaming."""
     # Pre-stream validation
-    async with async_session() as session:
+    async with db.async_session() as session:
         chapter, project = await _get_chapter_with_project(session, chapter_id)
         chapter.status = "learning"
         await session.commit()
@@ -86,7 +86,7 @@ async def generate_material(chapter_id: int):
     async def event_generator():
         try:
             ai_service = AIService()
-            async with async_session() as session:
+            async with db.async_session() as session:
                 chapter, project = await _get_chapter_with_project(
                     session, chapter_id
                 )
@@ -110,13 +110,13 @@ async def generate_material(chapter_id: int):
 async def regenerate_material(chapter_id: int):
     """Regenerate learning material for a chapter via SSE streaming."""
     # Pre-stream validation
-    async with async_session() as session:
+    async with db.async_session() as session:
         chapter, project = await _get_chapter_with_project(session, chapter_id)
 
     async def event_generator():
         try:
             ai_service = AIService()
-            async with async_session() as session:
+            async with db.async_session() as session:
                 chapter, project = await _get_chapter_with_project(
                     session, chapter_id
                 )
