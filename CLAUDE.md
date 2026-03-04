@@ -8,6 +8,18 @@ DailyUp is an AI-powered personalized learning platform. Users create learning p
 
 ## Commands
 
+### Quick Start (Makefile)
+
+```bash
+make install        # Install all dependencies (backend + frontend)
+make dev            # Run backend + frontend concurrently
+make test           # Run all tests (backend + frontend)
+make dev-backend    # Run backend only (port 8000)
+make dev-frontend   # Run frontend only (port 5173)
+make clean          # Remove venvs, node_modules, dist, __pycache__, .hypothesis, *.db
+make build          # Production frontend build
+```
+
 ### Backend (Python/FastAPI)
 
 ```bash
@@ -42,8 +54,8 @@ cd frontend && npm run build
 # Lint
 cd frontend && npm run lint
 
-# Run tests
-cd frontend && npm run test
+# Run tests (no test script in package.json; use vitest directly)
+cd frontend && npx vitest run
 ```
 
 ## Architecture
@@ -53,7 +65,7 @@ cd frontend && npm run test
 Layered architecture: **Routes → Schemas → AI Services → OpenAI SDK → SQLite**
 
 - **`app/main.py`** — FastAPI app with lifespan-based DB init and CORS for `localhost:5173`
-- **`app/api/`** — REST endpoints. `plans.py` and `chapters.py` return `StreamingResponse` (SSE)
+- **`app/api/`** — REST endpoints. `plans.py` and `chapters.py` return `StreamingResponse` (SSE). Also includes `projects.py` (CRUD), `assessments.py` (assessment generation + evaluation), `settings.py` (LLM config)
 - **`app/models/__init__.py`** — All SQLAlchemy models in one file: `LLMSettings` (singleton, id=1), `LearningProject → LearningPlan → Chapter → LearningMaterial/Assessment`
 - **`app/schemas/__init__.py`** — All Pydantic request/response schemas in one file
 - **`app/services/ai_service.py`** — Core orchestrator. `AIService` class wraps `AsyncOpenAI` client and implements four agent methods with SSE streaming
@@ -74,6 +86,9 @@ React 19 SPA with file-based page routing and Zustand stores.
 - **`services/sse.ts`** — SSE client that parses `chunk`, `progress`, `done`, `error` event types
 - **`components/ui/`** — shadcn/ui primitives (new-york style, CSS variables)
 - **`components/`** — Domain components (AssessmentForm, ChapterList, StreamingContent, MarkdownRenderer, etc.)
+- **`lib/utils.ts`** — `cn()` helper for merging Tailwind classes (clsx + tailwind-merge)
+- **`types/index.ts`** — Shared TypeScript interfaces
+- **`test/setup.ts`** — Vitest global setup (jsdom environment, Testing Library matchers)
 
 Path alias: `@/*` maps to `./src/*`.
 
@@ -83,3 +98,10 @@ Path alias: `@/*` maps to `./src/*`.
 - **LLM settings are DB-stored** (not env vars): `LLMSettings` singleton at id=1 holds `api_key`, `base_url`, `model_name`. The Settings page configures these, and `LLMGuard` component blocks AI features until configured.
 - **Tests use Hypothesis** for property-based testing on the backend. pytest is configured with `asyncio_mode = auto`.
 - **Frontend testing** uses Vitest + Testing Library + fast-check (property-based).
+
+### Gotchas
+
+- **No `npm run test`**: Frontend has no `test` script in package.json. Use `npx vitest run` or `make test`.
+- **DB reset**: SQLite files (`*.db`) live in `backend/`. Delete them or run `make clean` to reset. No migrations — schema changes require DB recreation.
+- **Vitest config**: Tests use `jsdom` environment with globals enabled. Setup file at `src/test/setup.ts` registers Testing Library matchers.
+- **CORS**: Backend only allows `localhost:5173`. If you change the frontend port, update `app/main.py`.

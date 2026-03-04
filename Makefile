@@ -27,6 +27,7 @@ test-frontend:
 clean:
 	rm -rf backend/.venv frontend/node_modules frontend/dist
 	find backend -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	rm -rf backend/.hypothesis
 	rm -f backend/*.db
 
 build:

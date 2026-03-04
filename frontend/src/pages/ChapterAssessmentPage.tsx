@@ -29,10 +29,21 @@ export default function ChapterAssessmentPage() {
   const [pageState, setPageState] = useState<PageState>({ phase: "loading" });
   const streamStore = useStreamStore();
   const hasTriggeredGeneration = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const abortStream = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+  }, []);
 
   // Fetch chapter and existing assessment on mount
   useEffect(() => {
     let cancelled = false;
+
+    // Abort previous stream and reset when chapter changes
+    abortStream();
+    streamStore.reset();
+    hasTriggeredGeneration.current = false;
 
     async function fetchData() {
       try {
@@ -84,6 +95,7 @@ export default function ChapterAssessmentPage() {
     fetchData();
     return () => {
       cancelled = true;
+      abortStream();
     };
   }, [chapterId]);
 
@@ -100,11 +112,16 @@ export default function ChapterAssessmentPage() {
   }, [pageState.phase]);
 
   const generateAssessment = useCallback(() => {
+    abortStream();
     streamStore.reset();
     streamStore.setStreaming(true);
     streamStore.setProgressMessage("正在生成考核题目...");
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     streamFetch(`/chapters/${chapterId}/assessment`, {
+      signal: controller.signal,
       onProgress: (_phase, message) => {
         useStreamStore.getState().setProgressMessage(message);
       },
@@ -119,20 +136,25 @@ export default function ChapterAssessmentPage() {
         setPageState({ phase: "error", message: error.message });
       },
     });
-  }, [chapterId, streamStore]);
+  }, [chapterId, streamStore, abortStream]);
 
   const handleSubmit = useCallback(
     (answers: string[]) => {
       if (pageState.phase !== "quiz") return;
       const assessment = pageState.assessment;
 
+      abortStream();
       setPageState({ phase: "submitting" });
       streamStore.reset();
       streamStore.setStreaming(true);
       streamStore.setProgressMessage("正在评判答案...");
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       streamFetch(`/assessments/${assessment.id}/submit`, {
         body: { answers },
+        signal: controller.signal,
         onProgress: (_phase, message) => {
           useStreamStore.getState().setProgressMessage(message);
         },
@@ -148,7 +170,7 @@ export default function ChapterAssessmentPage() {
         },
       });
     },
-    [pageState, streamStore]
+    [pageState, streamStore, abortStream]
   );
 
   const handleBack = () => {

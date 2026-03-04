@@ -23,10 +23,22 @@ export default function ChapterLearningPage() {
 
   const streamStore = useStreamStore();
   const hasTriggeredGeneration = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream
+  const abortStream = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+  }, []);
 
   // Fetch chapter info and existing material
   useEffect(() => {
     let cancelled = false;
+
+    // Abort previous stream and reset when chapter changes
+    abortStream();
+    streamStore.reset();
+    hasTriggeredGeneration.current = false;
 
     async function fetchData() {
       try {
@@ -64,6 +76,7 @@ export default function ChapterLearningPage() {
     fetchData();
     return () => {
       cancelled = true;
+      abortStream();
     };
   }, [chapterId]);
 
@@ -85,15 +98,20 @@ export default function ChapterLearningPage() {
 
   const generateMaterial = useCallback(
     (isRegenerate: boolean) => {
+      abortStream();
       streamStore.reset();
       streamStore.setStreaming(true);
       setExistingMaterial(null);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       const path = isRegenerate
         ? `/chapters/${chapterId}/material/regenerate`
         : `/chapters/${chapterId}/material/generate`;
 
       streamFetch(path, {
+        signal: controller.signal,
         onChunk: (content) => {
           useStreamStore.getState().appendChunk(content);
         },
@@ -111,7 +129,7 @@ export default function ChapterLearningPage() {
         },
       });
     },
-    [chapterId, streamStore]
+    [chapterId, streamStore, abortStream]
   );
 
   const handleBack = () => {

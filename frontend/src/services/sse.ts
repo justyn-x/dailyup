@@ -3,6 +3,7 @@ const API_BASE = "/api";
 interface StreamFetchOptions {
   method?: "GET" | "POST";
   body?: unknown;
+  signal?: AbortSignal;
   onChunk?: (content: string) => void;
   onProgress?: (phase: string, message: string) => void;
   onDone: (result: unknown) => void;
@@ -17,12 +18,13 @@ export async function streamFetch(
   path: string,
   options: StreamFetchOptions,
 ): Promise<void> {
-  const { method = "POST", body, onChunk, onProgress, onDone, onError } =
+  const { method = "POST", body, signal, onChunk, onProgress, onDone, onError } =
     options;
 
   const fetchOptions: RequestInit = {
     method,
     headers: { "Content-Type": "application/json" },
+    signal,
   };
   if (body !== undefined) {
     fetchOptions.body = JSON.stringify(body);
@@ -31,7 +33,8 @@ export async function streamFetch(
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, fetchOptions);
-  } catch {
+  } catch (err) {
+    if (signal?.aborted) return;
     onError({
       code: "network_error",
       message: "网络连接失败",
@@ -67,6 +70,7 @@ export async function streamFetch(
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      if (signal?.aborted) break;
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");

@@ -11,8 +11,11 @@ interface PlanStore {
 
   fetchPlan: (projectId: number) => Promise<void>;
   generatePlan: (projectId: number) => Promise<void>;
+  abortGeneration: () => void;
   reset: () => void;
 }
+
+let currentAbortController: AbortController | null = null;
 
 export const usePlanStore = create<PlanStore>((set) => ({
   plan: null,
@@ -37,10 +40,15 @@ export const usePlanStore = create<PlanStore>((set) => ({
   },
 
   generatePlan: async (projectId: number) => {
+    currentAbortController?.abort();
+    const controller = new AbortController();
+    currentAbortController = controller;
+
     set({ isGenerating: true, progressMessage: "正在准备生成学习计划...", error: null });
 
     await streamFetch(`/projects/${projectId}/plan`, {
       method: "POST",
+      signal: controller.signal,
       onProgress: (_phase: string, message: string) => {
         set({ progressMessage: message });
       },
@@ -61,7 +69,14 @@ export const usePlanStore = create<PlanStore>((set) => ({
     });
   },
 
+  abortGeneration: () => {
+    currentAbortController?.abort();
+    currentAbortController = null;
+  },
+
   reset: () => {
+    currentAbortController?.abort();
+    currentAbortController = null;
     set({
       plan: null,
       isGenerating: false,
