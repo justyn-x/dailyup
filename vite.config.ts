@@ -14,6 +14,18 @@ function llmProxyPlugin(): Plugin {
     name: "llm-cors-proxy",
     configureServer(server) {
       server.middlewares.use("/llm-proxy", async (req, res) => {
+        // Handle CORS preflight first
+        if (req.method === "OPTIONS") {
+          res.writeHead(204, {
+            "access-control-allow-origin": "*",
+            "access-control-allow-methods": "*",
+            "access-control-allow-headers": "*",
+            "access-control-max-age": "86400",
+          });
+          res.end();
+          return;
+        }
+
         const targetUrl = req.headers["x-target-url"] as string | undefined;
         if (!targetUrl) {
           res.writeHead(400, { "Content-Type": "application/json" });
@@ -42,6 +54,7 @@ function llmProxyPlugin(): Plugin {
           if (value) forwardHeaders[key] = Array.isArray(value) ? value.join(", ") : value;
         }
 
+        let headersSent = false;
         try {
           const response = await fetch(targetUrl, {
             method: req.method || "POST",
@@ -58,6 +71,8 @@ function llmProxyPlugin(): Plugin {
             const lower = k.toLowerCase();
             // Skip CORS headers from upstream — we set our own
             if (lower.startsWith("access-control-")) return;
+            // Node fetch auto-decompresses, so strip encoding/length to avoid mismatch
+            if (lower === "content-encoding" || lower === "content-length") return;
             resHeaders[k] = v;
           });
           resHeaders["access-control-allow-origin"] = "*";
@@ -65,6 +80,7 @@ function llmProxyPlugin(): Plugin {
           resHeaders["access-control-allow-methods"] = "*";
 
           res.writeHead(response.status, resHeaders);
+          headersSent = true;
 
           if (contentType.includes("text/event-stream") || contentType.includes("stream")) {
             // Stream the response
@@ -82,6 +98,11 @@ function llmProxyPlugin(): Plugin {
             res.end(Buffer.from(data));
           }
         } catch (err: unknown) {
+          if (headersSent) {
+            // Headers already sent, just close the connection
+            res.end();
+            return;
+          }
           res.writeHead(502, {
             "Content-Type": "application/json",
             "access-control-allow-origin": "*",
@@ -93,21 +114,6 @@ function llmProxyPlugin(): Plugin {
             }),
           );
         }
-      });
-
-      // Handle CORS preflight for the proxy endpoint
-      server.middlewares.use("/llm-proxy", (req, res, next) => {
-        if (req.method === "OPTIONS") {
-          res.writeHead(204, {
-            "access-control-allow-origin": "*",
-            "access-control-allow-methods": "*",
-            "access-control-allow-headers": "*",
-            "access-control-max-age": "86400",
-          });
-          res.end();
-          return;
-        }
-        next();
       });
     },
   };
