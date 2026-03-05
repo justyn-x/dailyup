@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyUp - AI 学习规划</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <script>
+    if (typeof marked === 'undefined' || typeof marked.parse !== 'function') {
+        window.marked = {
+            parse: function(text) {
+                return text
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/```[\s\S]*?```/g, function(m) {
+                        var code = m.replace(/```\w*\n?/g, '').replace(/```$/g, '');
+                        return '<pre><code>' + code + '</code></pre>';
+                    })
+                    .replace(/^\&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+                    .replace(/^\- (.+)$/gm, '<li>$1</li>')
+                    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+                    .replace(/\n{2,}/g, '</p><p>')
+                    .replace(/^/, '<p>').replace(/$/, '</p>')
+                    .replace(/<p><(h[1-3]|pre|blockquote|li)/g, '<$1')
+                    .replace(/<\/(h[1-3]|pre|blockquote|li)><\/p>/g, '</$1>');
+            }
+        };
+    }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background: #e8e8ed;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+        /* Thin styled scrollbar for content area */
+        .styled-scrollbar::-webkit-scrollbar { width: 6px; }
+        .styled-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .styled-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .styled-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* macOS Window Chrome */
+        .window-chrome {
+            box-shadow: 0 25px 80px -12px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06);
+        }
+
+        .titlebar {
+            background: rgba(246, 247, 251, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .traffic-light { width: 12px; height: 12px; border-radius: 50%; }
+        .traffic-close { background: #ff5f57; border: 1px solid #e0443e; }
+        .traffic-minimize { background: #febc2e; border: 1px solid #dea123; }
+        .traffic-maximize { background: #28c840; border: 1px solid #1aab29; }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(248, 249, 253, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            gap: 10px;
+            user-select: none;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.6); color: #334155; }
+        .sidebar-item.active { background: white; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .sidebar-item .sidebar-icon { width: 20px; text-align: center; font-size: 0.8rem; }
+
+        .sidebar-project-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            gap: 8px;
+            user-select: none;
+        }
+        .sidebar-project-item:hover { background: rgba(255,255,255,0.6); color: #334155; }
+        .sidebar-project-item.active { background: white; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+        .sidebar-section-title {
+            font-size: 0.6875rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0 12px;
+            margin-bottom: 4px;
+        }
+
+        .progress-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+
+        /* Content width constraints */
+        .content-reading { max-width: 720px; margin: 0 auto; }
+        .content-form { max-width: 560px; margin: 0 auto; }
+        .content-wide { max-width: 800px; margin: 0 auto; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .day-active { background: #4f46e5; color: white; }
+        .day-streak { background: #eef2ff; color: #4f46e5; position: relative; }
+        .day-streak::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background: #4f46e5;
+            border-radius: 50%;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 1.25rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .setting-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-color: #e2e8f0; }
+
+        /* Loading transition animations */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1); transform: scale(1); }
+            50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.5), 0 0 80px rgba(99, 102, 241, 0.2); transform: scale(1.05); }
+        }
+        @keyframes textFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes textFadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-8px); }
+        }
+        @keyframes progressCrawl {
+            0% { width: 5%; } 30% { width: 35%; } 60% { width: 60%; } 80% { width: 78%; } 95% { width: 88%; } 100% { width: 92%; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes orbitDot {
+            0% { transform: rotate(0deg) translateX(48px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(48px) rotate(-360deg); }
+        }
+
+        .loading-icon { animation: pulseGlow 2s ease-in-out infinite; }
+        .loading-icon-inner { animation: float 3s ease-in-out infinite; }
+        .loading-orbit-dot { animation: orbitDot 3s linear infinite; }
+        .loading-progress-bar { animation: progressCrawl 12s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        .loading-text-enter { animation: textFadeIn 0.4s ease-out forwards; }
+        .loading-text-exit { animation: textFadeOut 0.3s ease-in forwards; }
+
+        .streaming-cursor::after {
+            content: '\25CA';
+            color: #6366f1;
+            animation: blink 0.8s step-end infinite;
+            margin-left: 2px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .material-content h1 { font-size: 1.75rem; font-weight: 800; margin: 1.5rem 0 0.75rem; color: #1e293b; }
+        .material-content h2 { font-size: 1.375rem; font-weight: 800; margin: 1.25rem 0 0.5rem; color: #334155; }
+        .material-content h3 { font-size: 1.125rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #475569; }
+        .material-content p { margin: 0.5rem 0; line-height: 1.8; color: #475569; }
+        .material-content ul, .material-content ol { margin: 0.5rem 0; padding-left: 1.5rem; color: #475569; }
+        .material-content li { margin: 0.25rem 0; line-height: 1.7; }
+        .material-content code {
+            background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 0.375rem;
+            font-size: 0.85em; color: #6366f1; font-family: 'Menlo', monospace;
+        }
+        .material-content pre {
+            background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 1rem;
+            overflow-x: auto; margin: 0.75rem 0; font-size: 0.85rem;
+        }
+        .material-content pre code { background: transparent; color: inherit; padding: 0; }
+        .material-content blockquote {
+            border-left: 3px solid #6366f1; background: #eef2ff; padding: 0.75rem 1rem;
+            border-radius: 0 0.75rem 0.75rem 0; margin: 0.75rem 0; color: #4338ca;
+        }
+        .material-content strong { color: #1e293b; }
+        .material-content hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+        .material-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+        .material-content th { background: #f8fafc; font-weight: 700; text-align: left; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; }
+        .material-content td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; }
+        .material-content .mermaid-container { margin: 1rem 0; background: #f8fafc; border-radius: 1rem; padding: 1rem; border: 1px solid #e2e8f0; overflow-x: auto; }
+        .material-content .mermaid-container svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        .material-content .mermaid-error { color: #ef4444; font-size: 0.8rem; padding: 0.75rem; background: #fef2f2; border-radius: 0.5rem; }
+
+        .quiz-option {
+            transition: all 0.15s;
+            cursor: pointer;
+            border: 2px solid #f1f5f9;
+        }
+        .quiz-option:hover { border-color: #c7d2fe; background: #f8fafc; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .quiz-option.selected { border-color: #6366f1; background: #eef2ff; }
+        .quiz-option.correct { border-color: #22c55e; background: #f0fdf4; }
+        .quiz-option.incorrect { border-color: #ef4444; background: #fef2f2; }
+        .quiz-option.reveal-correct { border-color: #22c55e; background: #f0fdf4; }
+        .quiz-option.disabled { pointer-events: none; opacity: 0.85; }
+
+        /* Desktop button hover */
+        .btn-desktop {
+            transition: all 0.15s;
+        }
+        .btn-desktop:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-desktop:active { transform: translateY(0); }
+
+        /* Project card hover for desktop */
+        .project-card {
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .project-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-color: #c7d2fe; }
+    </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-6">
+
+    <!-- macOS Window Frame -->
+    <div class="window-chrome w-full max-w-[1200px] h-[900px] bg-white rounded-2xl overflow-hidden flex flex-col">
+
+        <!-- Title Bar -->
+        <div class="titlebar h-[36px] flex items-center px-4 shrink-0 relative">
+            <div class="flex items-center space-x-2">
+                <div class="traffic-light traffic-close"></div>
+                <div class="traffic-light traffic-minimize"></div>
+                <div class="traffic-light traffic-maximize"></div>
+            </div>
+            <span class="absolute left-1/2 -translate-x-1/2 text-[13px] font-bold text-slate-500">DailyUp</span>
+        </div>
+
+        <!-- Main Layout: Sidebar + Content -->
+        <div class="flex flex-1 overflow-hidden">
+
+            <!-- Sidebar -->
+            <div class="sidebar w-[260px] shrink-0 flex flex-col py-4 overflow-y-auto scrollbar-hide">
+                <!-- User Area -->
+                <div onclick="switchView('profile')" class="flex items-center space-x-3 px-4 pb-4 mb-2 border-b border-slate-100/60 cursor-pointer group">
+                    <img id="sidebar-avatar" class="w-10 h-10 rounded-xl bg-indigo-50 object-cover group-hover:shadow-md transition-all" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="avatar">
+                    <div class="min-w-0">
+                        <p id="sidebar-nickname" class="text-sm font-black text-slate-800 truncate">Hi, 学习家</p>
+                        <p class="text-[10px] text-slate-400 font-bold">今天也是进步的一天</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="px-3 space-y-0.5 mb-4">
+                    <div id="nav-dashboard" class="sidebar-item active" onclick="switchView('dashboard')">
+                        <span class="sidebar-icon"><i class="fas fa-th-large"></i></span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div id="nav-calendar" class="sidebar-item" onclick="switchView('calendar')">
+                        <span class="sidebar-icon"><i class="fas fa-calendar-alt"></i></span>
+                        <span>学习日历</span>
+                    </div>
+                </div>
+
+                <!-- Projects Section -->
+                <div class="px-3 flex-1">
+                    <div class="flex items-center justify-between mb-2 px-1">
+                        <span class="sidebar-section-title px-0">我的项目</span>
+                        <button onclick="switchView('create')" class="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 hover:bg-white hover:text-indigo-500 transition-all text-xs">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="sidebar-projects" class="space-y-0.5"></div>
+                    <div id="sidebar-empty" class="hidden px-3 py-4 text-center">
+                        <p class="text-[11px] text-slate-300 font-bold">暂无项目</p>
+                    </div>
+                </div>
+
+                <!-- Bottom: Settings -->
+                <div class="px-3 pt-2 mt-2 border-t border-slate-100/60">
+                    <div id="nav-settings" class="sidebar-item" onclick="switchView('settings')">
+                        <span class="sidebar-icon"><i class="fas fa-cog"></i></span>
+                        <span>设置</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div id="main-content" class="flex-1 bg-white overflow-y-auto styled-scrollbar">
+                <div class="px-10 py-8">
+
+                    <!-- VIEW: DASHBOARD -->
+                    <div id="view-dashboard" class="view active">
+                        <div class="content-wide">
+                            <div class="relative mb-8">
+                                <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-[2rem] p-8 text-white shadow-lg shadow-indigo-200/50 text-center">
+                                    <p class="text-[10px] font-black opacity-70 uppercase tracking-widest mb-4">学习进度总览</p>
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
+                                            <i class="fas fa-trophy text-3xl text-yellow-300"></i>
+                                        </div>
+                                        <span id="dashboard-total-chapters" class="text-5xl font-black mb-2 italic">0</span>
+                                        <p class="text-xs opacity-70 mb-4">章节已完成</p>
+                                        <button onclick="switchView('calendar')" class="bg-white/20 backdrop-blur-md px-6 py-2.5 rounded-full text-[10px] font-black hover:bg-white/30 transition-colors">查看学习日历</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="llm-banner" class="hidden mb-6">
+                                <div onclick="switchView('llm-config')" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-[1.5rem] p-4 flex items-center space-x-3 cursor-pointer hover:shadow-md transition-all">
+                                    <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                                        <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-slate-800">AI 模型未配置</p>
+                                        <p class="text-[11px] text-slate-400 font-bold">前往设置配置 API 以获得完整体验</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-amber-400 text-xs shrink-0"></i>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center mb-5 px-1">
+                                <h3 class="text-lg font-black text-slate-900">进行中的项目</h3>
+                                <button onclick="switchView('create')" class="text-indigo-500 font-bold text-xs flex items-center hover:text-indigo-700 transition-colors">
+                                    <i class="fas fa-plus mr-1"></i> 新建项目
+                                </button>
+                            </div>
+
+                            <div id="project-list" class="grid grid-cols-2 gap-4"></div>
+                            <div id="empty-projects" class="hidden text-center py-16">
+                                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-book-open text-3xl text-slate-300"></i>
+                                </div>
+                                <p class="text-slate-400 font-bold text-sm">还没有学习项目</p>
+                                <p class="text-slate-300 text-xs mt-1">点击侧边栏 + 或按 ⌘N 创建你的第一个计划</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: CALENDAR -->
+                    <div id="view-calendar" class="view">
+                        <div class="content-form">
+                            <header class="mb-8">
+                                <h2 class="text-2xl font-black text-slate-900">学习日历</h2>
+                                <p class="text-slate-400 text-xs font-bold mt-1">坚持就是胜利，加油！</p>
+                            </header>
+
+                            <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 mb-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <span class="font-black text-slate-800">2024年3月</span>
+                                    <div class="flex space-x-2">
+                                        <button class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
+                                        <button class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                                    </div>
+                                </div>
+                                <div class="calendar-grid text-slate-400 text-[10px] font-black text-center mb-4 uppercase">
+                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                </div>
+                                <div class="calendar-grid" id="calendar-days"></div>
+                            </div>
+
+                            <div class="bg-indigo-600 rounded-[2rem] p-6 text-white flex items-center justify-between shadow-lg shadow-indigo-100">
+                                <div>
+                                    <p class="text-[10px] font-black opacity-70 mb-1 uppercase">连续打卡</p>
+                                    <h4 class="text-2xl font-black italic">7 DAYS</h4>
+                                </div>
+                                <i class="fas fa-fire text-3xl text-orange-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: SETTINGS -->
+                    <div id="view-settings" class="view">
+                        <div class="content-form">
+                            <header class="mb-8">
+                                <h2 class="text-2xl font-black text-slate-900">设置</h2>
+                            </header>
+
+                            <div onclick="switchView('profile')" class="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 mb-6 flex items-center space-x-4 cursor-pointer hover:shadow-md hover:border-indigo-200 transition-all">
+                                <img id="settings-avatar" class="w-16 h-16 rounded-[1.2rem] bg-indigo-50 border-2 border-white shadow-sm object-cover" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="avatar">
+                                <div class="flex-1 min-w-0">
+                                    <p id="settings-nickname" class="text-base font-black text-slate-900 truncate">学习家</p>
+                                    <p class="text-[11px] text-slate-400 font-bold mt-0.5">个人资料、头像设置</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-slate-300 text-xs shrink-0"></i>
+                            </div>
+
+                            <div class="space-y-1">
+                                <div onclick="switchView('llm-config')" class="setting-item">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-500 text-white rounded-xl flex items-center justify-center mr-4"><i class="fas fa-robot"></i></div>
+                                    <div class="flex-1">
+                                        <span class="font-bold text-slate-700">AI 模型配置</span>
+                                        <p id="llm-config-summary" class="text-[10px] text-slate-400 font-bold mt-0.5">未配置</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                                </div>
+                                <div onclick="clearAllData()" class="setting-item mt-4 border-red-50 text-red-500 hover:border-red-200">
+                                    <div class="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mr-4"><i class="fas fa-trash-alt"></i></div>
+                                    <span class="flex-1 font-bold">清除所有数据</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: PROFILE -->
+                    <div id="view-profile" class="view">
+                        <div class="content-form">
+                            <header class="flex items-center mb-8">
+                                <button onclick="switchView('settings')" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 class="ml-2 text-xl font-black text-slate-900">个人资料</h2>
+                            </header>
+
+                            <div class="flex flex-col items-center mb-6">
+                                <img id="profile-current-avatar" class="w-24 h-24 rounded-[1.5rem] bg-indigo-50 border-4 border-white shadow-lg object-cover mb-2" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="avatar">
+                                <p class="text-[11px] text-slate-400 font-bold">选择下方头像更换</p>
+                            </div>
+
+                            <div class="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 mb-6">
+                                <p class="text-xs font-bold text-slate-500 mb-4">选择头像</p>
+                                <div id="avatar-grid" class="grid grid-cols-6 gap-3"></div>
+                            </div>
+
+                            <div class="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 mb-6">
+                                <label class="text-xs font-bold text-slate-500 mb-2 block">昵称</label>
+                                <input id="cfg-nickname" type="text" placeholder="输入你的昵称"
+                                    class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 outline-none text-sm font-bold focus:border-indigo-300 focus:bg-white transition-all mb-4">
+                                <button onclick="saveProfile()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-sm btn-desktop">
+                                    <i class="fas fa-check mr-1.5"></i>保存
+                                </button>
+                                <div id="profile-save-status" class="hidden text-center text-xs font-bold py-2 rounded-xl mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: CREATE PROJECT -->
+                    <div id="view-create" class="view">
+                        <div class="content-form">
+                            <header class="flex items-center mb-8">
+                                <button onclick="switchView('dashboard')" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 class="ml-2 text-xl font-black text-slate-900">开启新计划</h2>
+                            </header>
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 mb-1.5 block">学习目标 <span class="text-red-400">*</span></label>
+                                    <input id="input-goal" type="text" placeholder="我想学会..."
+                                        class="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold shadow-sm focus:border-indigo-300 transition-all">
+                                    <p id="goal-error" class="hidden text-red-500 text-xs font-bold mt-1.5 ml-1"><i class="fas fa-exclamation-circle mr-1"></i>请输入学习目标</p>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 mb-1.5 block">我的背景</label>
+                                    <textarea id="input-bg" placeholder="我的专业背景是..." rows="3"
+                                        class="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold resize-none shadow-sm focus:border-indigo-300 transition-all"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 mb-1.5 block">已有技能</label>
+                                    <input id="input-skills" type="text" placeholder="已掌握的相关技能（可选）"
+                                        class="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 outline-none font-bold shadow-sm focus:border-indigo-300 transition-all">
+                                </div>
+                                <button onclick="createProject()" class="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl btn-desktop mt-2">
+                                    <i class="fas fa-wand-magic-sparkles mr-2"></i>AI 智能规划
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: PROJECT DETAIL -->
+                    <div id="view-detail" class="view">
+                        <div class="content-reading">
+                            <header class="flex items-center mb-4">
+                                <button onclick="switchView('dashboard')" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 id="detail-title" class="ml-2 text-lg font-black text-slate-900 truncate">项目详情</h2>
+                            </header>
+                            <div id="detail-progress-section" class="hidden mb-6">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-slate-500"><i class="fas fa-chart-line mr-1"></i>学习进度</span>
+                                    <span id="detail-progress-text" class="text-xs font-black text-indigo-600">0/0 章节</span>
+                                </div>
+                                <div class="bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div id="detail-progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="detail-loading" class="hidden"></div>
+                            <div id="detail-error" class="hidden"></div>
+                            <div id="chapter-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: LEARNING MATERIAL -->
+                    <div id="view-material" class="view">
+                        <div class="content-reading">
+                            <header id="material-header" class="flex items-center mb-4 pb-2 border-b border-slate-100">
+                                <button id="material-back-btn" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 id="material-title" class="ml-2 text-lg font-black text-slate-900 truncate">学习材料</h2>
+                            </header>
+                            <div id="material-loading" class="hidden"></div>
+                            <div id="material-error" class="hidden"></div>
+                            <div id="material-body" class="hidden">
+                                <div id="material-content" class="material-content"></div>
+                                <div id="material-nav" class="mt-8 mb-4 pt-6 border-t border-slate-100 flex justify-between items-center"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: ASSESSMENT -->
+                    <div id="view-assessment" class="view">
+                        <div class="content-form" style="max-width: 640px;">
+                            <header class="flex items-center mb-4">
+                                <button id="assessment-back-btn" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 id="assessment-title" class="ml-2 text-lg font-black text-slate-900 truncate">章节考核</h2>
+                            </header>
+                            <div id="assessment-loading" class="hidden"></div>
+                            <div id="assessment-error" class="hidden"></div>
+                            <div id="assessment-body" class="hidden">
+                                <div id="assessment-progress" class="mb-4"></div>
+                                <div id="assessment-question" class="mb-6"></div>
+                                <div id="assessment-options" class="space-y-3 mb-6"></div>
+                                <div id="assessment-explanation" class="hidden mb-6"></div>
+                                <div id="assessment-actions" class="mb-4"></div>
+                            </div>
+                            <div id="assessment-result" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: LLM CONFIG -->
+                    <div id="view-llm-config" class="view">
+                        <div class="content-form">
+                            <header class="flex items-center mb-8">
+                                <button onclick="switchView('settings')" class="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-arrow-left"></i></button>
+                                <h2 class="ml-2 text-xl font-black text-slate-900">AI 模型配置</h2>
+                            </header>
+
+                            <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 mb-6">
+                                <p class="text-xs text-slate-400 font-bold mb-5">配置 OpenAI 兼容接口，用于生成学习计划、材料和考核题目。</p>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="text-xs font-bold text-slate-500 mb-1.5 block">API Base URL</label>
+                                        <input id="cfg-base-url" type="text" placeholder="https://api.openai.com/v1"
+                                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 outline-none text-sm font-bold focus:border-indigo-300 focus:bg-white transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-slate-500 mb-1.5 block">API Key</label>
+                                        <div class="relative">
+                                            <input id="cfg-api-key" type="password" placeholder="sk-..."
+                                                class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 pr-12 outline-none text-sm font-bold focus:border-indigo-300 focus:bg-white transition-all">
+                                            <button onclick="toggleApiKeyVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1">
+                                                <i id="api-key-eye" class="fas fa-eye text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-slate-500 mb-1.5 block">模型名称</label>
+                                        <input id="cfg-model" type="text" placeholder="gpt-4o-mini"
+                                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 outline-none text-sm font-bold focus:border-indigo-300 focus:bg-white transition-all">
+                                    </div>
+                                    <div class="flex space-x-3 pt-2">
+                                        <button onclick="saveLLMConfig()" class="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl text-sm btn-desktop">
+                                            <i class="fas fa-save mr-1.5"></i>保存配置
+                                        </button>
+                                        <button onclick="testLLMConnection()" id="btn-test-conn" class="flex-1 bg-indigo-50 text-indigo-600 font-bold py-3 rounded-xl text-sm btn-desktop">
+                                            <i class="fas fa-plug mr-1.5"></i>测试连接
+                                        </button>
+                                    </div>
+                                    <div id="llm-config-status" class="hidden text-center text-xs font-bold py-2 rounded-xl"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // =============================================
+    // Data Model + localStorage Persistence
+    // =============================================
+
+    const STORAGE_KEYS = { projects: 'dailyup_projects', llmConfig: 'dailyup_llm_config', profile: 'dailyup_profile' };
+
+    var AVATAR_SEEDS = ['Felix', 'Luna', 'Max', 'Lily', 'Oscar', 'Chloe', 'Leo', 'Mia', 'Bella', 'Charlie', 'Nala', 'Simba'];
+
+    function getAvatarUrl(seed) {
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(seed);
+    }
+
+    let projects = [];
+    let llmConfig = { baseUrl: '', apiKey: '', model: '' };
+    let profile = { nickname: '学习家', avatar: 'Felix' };
+    let currentProjectId = null;
+    let currentChapterIdx = null;
+    let currentAbortController = null;
+
+    function saveToLocalStorage() { localStorage.setItem(STORAGE_KEYS.projects, JSON.stringify(projects)); }
+    function saveLLMConfigToStorage() { localStorage.setItem(STORAGE_KEYS.llmConfig, JSON.stringify(llmConfig)); }
+    function saveProfileToStorage() { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)); }
+    function loadFromLocalStorage() {
+        try {
+            var p = localStorage.getItem(STORAGE_KEYS.projects);
+            if (p) projects = JSON.parse(p);
+            var c = localStorage.getItem(STORAGE_KEYS.llmConfig);
+            if (c) llmConfig = JSON.parse(c);
+            var pr = localStorage.getItem(STORAGE_KEYS.profile);
+            if (pr) {
+                profile = JSON.parse(pr);
+                if (profile.avatarIndex !== undefined && !profile.avatar) {
+                    profile.avatar = AVATAR_SEEDS[profile.avatarIndex] || 'Felix';
+                    delete profile.avatarIndex;
+                    saveProfileToStorage();
+                }
+            }
+        } catch(e) { console.warn('Failed to load localStorage', e); }
+    }
+
+    function getProject(id) { return projects.find(function(p) { return p.id === id; }); }
+    function calcProgress(project) {
+        if (!project.chapters || project.chapters.length === 0) return 0;
+        var done = project.chapters.filter(function(c) { return c.status === 'assessment_completed'; }).length;
+        return Math.round(done / project.chapters.length * 100);
+    }
+    function hasLLMConfig() {
+        return !!(llmConfig.baseUrl && llmConfig.apiKey && llmConfig.model && llmConfig.baseUrl.indexOf('http') === 0);
+    }
+
+    // =============================================
+    // Safe DOM helpers
+    // =============================================
+
+    function escapeHTML(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    function setContent(el, html) { el.innerHTML = html; }
+
+    // Mermaid initialization
+    var mermaidReady = false;
+    var mermaidIdCounter = 0;
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose', fontFamily: 'system-ui, sans-serif' });
+        mermaidReady = true;
+    }
+
+    async function renderMermaidBlocks(container) {
+        if (!mermaidReady) return;
+        var pres = container.querySelectorAll('pre');
+        for (var i = 0; i < pres.length; i++) {
+            var code = pres[i].querySelector('code');
+            if (!code) continue;
+            var isMermaid = code.className.indexOf('language-mermaid') !== -1 || code.className.indexOf('mermaid') !== -1;
+            if (!isMermaid) continue;
+            var graphDef = code.textContent.trim();
+            var wrapper = document.createElement('div');
+            wrapper.className = 'mermaid-container';
+            try {
+                var id = 'mermaid-' + (++mermaidIdCounter);
+                var result = await mermaid.render(id, graphDef);
+                wrapper.innerHTML = result.svg;
+            } catch(e) {
+                wrapper.className = 'mermaid-error';
+                wrapper.textContent = 'Mermaid 图表渲染失败: ' + (e.message || '语法错误');
+                var errEl = document.getElementById('d' + id);
+                if (errEl) errEl.remove();
+            }
+            pres[i].replaceWith(wrapper);
+        }
+    }
+
+    // =============================================
+    // Templates (Mock AI)
+    // =============================================
+
+    var PLAN_TEMPLATES = {
+        '投资': [
+            { title: '投资基础概念', summary: '了解资产类别、风险收益关系等核心概念' },
+            { title: '股票市场入门', summary: '学习股票交易、财务报表分析基础' },
+            { title: '基金与 ETF', summary: '掌握基金选择、定投策略和 ETF 运用' },
+            { title: '风险管理与资产配置', summary: '学习分散投资、止损策略和组合管理' },
+            { title: '实战模拟与策略制定', summary: '综合运用所学知识进行模拟投资实践' }
+        ],
+        '编程': [
+            { title: '编程思维与环境搭建', summary: '建立编程思维，配置开发环境' },
+            { title: '基础语法与数据类型', summary: '变量、运算符、条件判断和循环' },
+            { title: '函数与模块化', summary: '函数定义、参数传递和代码复用' },
+            { title: '数据结构与算法入门', summary: '数组、对象、常用算法思想' },
+            { title: '项目实战', summary: '综合运用所学完成一个小型项目' }
+        ],
+        '设计': [
+            { title: '设计原理与色彩理论', summary: '了解视觉设计的基本原则和色彩运用' },
+            { title: '排版与构图', summary: '学习字体选择、版面布局和构图技巧' },
+            { title: '工具实操', summary: '掌握主流设计工具的核心操作' },
+            { title: 'UI/UX 设计基础', summary: '用户体验设计、交互设计原则' },
+            { title: '作品集制作', summary: '综合实战，完成一个设计案例' }
+        ],
+        'default': [
+            { title: '基础入门', summary: '了解核心概念和基本框架' },
+            { title: '核心知识深入', summary: '深入理解关键知识点和原理' },
+            { title: '方法论与技巧', summary: '学习实用方法和高效技巧' },
+            { title: '案例分析', summary: '通过实际案例加深理解' },
+            { title: '综合实践', summary: '综合运用所学知识进行实践' }
+        ]
+    };
+
+    function getTemplateForGoal(goal) {
+        var keys = Object.keys(PLAN_TEMPLATES);
+        for (var i = 0; i < keys.length; i++) {
+            if (keys[i] !== 'default' && goal.indexOf(keys[i]) !== -1) return PLAN_TEMPLATES[keys[i]];
+        }
+        return PLAN_TEMPLATES['default'];
+    }
+
+    var MATERIAL_TEMPLATE = '## 核心概念\n\n本章节将帮助你理解以下核心内容：\n\n### 什么是关键概念？\n\n在学习任何领域时，**关键概念**是构建知识体系的基石。它们是你需要首先掌握的核心要素。\n\n> 学习提示：理解概念比死记硬背更重要，试着用自己的话解释每个概念。\n\n### 基本原理\n\n1. **第一性原理** — 从最基本的事实出发进行推理\n2. **渐进式学习** — 由浅入深，逐步构建知识网络\n3. **实践验证** — 通过实际操作来加深对理论的理解\n\n### 学习路径\n\n下面的流程图展示了从入门到精通的完整学习路径：\n\n```mermaid\nflowchart TD\n    A[了解基础概念] --> B[模仿已有案例]\n    B --> C{能独立完成吗?}\n    C -- 是 --> D[独立实践]\n    C -- 否 --> B\n    D --> E[创新应用]\n    E --> F[分享与教授]\n    F --> G((精通))\n\n    style A fill:#e0e7ff,stroke:#6366f1\n    style G fill:#dcfce7,stroke:#22c55e\n```\n\n### 知识结构总览\n\n以下是本章知识点之间的关系：\n\n```mermaid\nmindmap\n  root((学习体系))\n    核心概念\n      定义与原理\n      第一性原理\n    方法论\n      渐进式学习\n      实践验证\n    应用层\n      案例分析\n      独立实践\n      创新拓展\n```\n\n### 实际示例\n\n```\n举个例子：\n当我们学习一个新技能时，通常经历以下阶段：\n→ 了解基础概念\n→ 模仿已有案例\n→ 独立实践\n→ 创新应用\n```\n\n### 知识要点总结\n\n| 要素 | 说明 | 重要程度 |\n|------|------|----------|\n| 核心概念 | 领域内最基本的定义和原理 | 高 |\n| 方法论 | 解决问题的系统化方法 | 高 |\n| 实践技巧 | 提高效率的实用技巧 | 中 |\n| 拓展知识 | 相关领域的关联内容 | 低 |\n\n---\n\n掌握了以上内容后，你就具备了进入下一阶段学习的基础。继续加油！\n';
+
+    var QUIZ_TEMPLATES = [
+        { question: '以下哪个是本章介绍的核心学习原则？', options: ['死记硬背所有知识点', '第一性原理思维', '只看理论不实践', '跳过基础直接进阶'], correctIndex: 1, explanation: '第一性原理思维是指从最基本的事实出发进行推理，是高效学习的核心方法之一。' },
+        { question: '渐进式学习的正确顺序是？', options: ['创新→实践→模仿→了解', '了解→模仿→实践→创新', '实践→了解→创新→模仿', '模仿→创新→了解→实践'], correctIndex: 1, explanation: '渐进式学习强调由浅入深：先了解基础概念，再模仿案例，然后独立实践，最后创新应用。' },
+        { question: '根据本章内容，哪个要素的重要程度最高？', options: ['拓展知识', '实践技巧', '核心概念', '学习工具'], correctIndex: 2, explanation: '核心概念是构建知识体系的基石，是重要程度最高的学习要素。' },
+        { question: '以下哪种学习方式最有效？', options: ['仅阅读教材', '用自己的话解释概念', '抄写笔记', '只做练习题'], correctIndex: 1, explanation: '用自己的话解释概念是主动学习的体现，能帮助你真正理解而非表面记忆。' }
+    ];
+
+    // =============================================
+    // Loading / Error Builders
+    // =============================================
+
+    function buildLoadingHTML(messages, subtitle) {
+        var msgJSON = escapeHTML(JSON.stringify(messages));
+        return '<div class="flex flex-col items-center justify-center py-10">' +
+            '<div class="loading-icon w-24 h-24 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 rounded-full flex items-center justify-center mb-8 relative">' +
+                '<div class="loading-icon-inner text-white text-3xl"><i class="fas fa-brain"></i></div>' +
+                '<div class="absolute inset-0 flex items-center justify-center">' +
+                    '<div class="loading-orbit-dot w-3 h-3 bg-indigo-300 rounded-full absolute" style="animation-delay: 0s;"></div>' +
+                    '<div class="loading-orbit-dot w-2 h-2 bg-violet-300 rounded-full absolute" style="animation-delay: -1s;"></div>' +
+                    '<div class="loading-orbit-dot w-2.5 h-2.5 bg-purple-300 rounded-full absolute" style="animation-delay: -2s;"></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="h-8 flex items-center justify-center mb-6">' +
+                '<p class="loading-status-text text-sm font-bold text-slate-600 loading-text-enter" data-messages=\'' + msgJSON + '\' data-index="0">' + escapeHTML(messages[0]) + '</p>' +
+            '</div>' +
+            '<div class="w-full max-w-[200px] mb-4">' +
+                '<div class="bg-slate-100 h-1.5 rounded-full overflow-hidden">' +
+                    '<div class="loading-progress-bar bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 h-full rounded-full relative">' +
+                        '<div class="loading-shimmer absolute inset-0 rounded-full"></div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<p class="text-[11px] text-slate-400 font-bold">' + escapeHTML(subtitle) + '</p>' +
+        '</div>';
+    }
+
+    function startLoadingTextRotation(container) {
+        var textEl = container.querySelector('.loading-status-text');
+        if (!textEl) return null;
+        var messages = JSON.parse(textEl.dataset.messages);
+        var idx = 0;
+        var interval = setInterval(function() {
+            idx = (idx + 1) % messages.length;
+            textEl.className = 'loading-status-text text-sm font-bold text-slate-600 loading-text-exit';
+            var capturedIdx = idx;
+            setTimeout(function() {
+                textEl.textContent = messages[capturedIdx];
+                textEl.className = 'loading-status-text text-sm font-bold text-slate-600 loading-text-enter';
+            }, 300);
+        }, 2500);
+        return interval;
+    }
+
+    var _retryCounter = 0;
+    function buildErrorHTML(message, retryFn) {
+        var fnName = '__retry_' + (++_retryCounter);
+        window[fnName] = retryFn;
+        return '<div class="flex flex-col items-center justify-center py-10">' +
+            '<div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-5">' +
+                '<i class="fas fa-exclamation-triangle text-3xl text-red-300"></i>' +
+            '</div>' +
+            '<p class="text-sm font-bold text-slate-700 mb-2 text-center">生成遇到了问题</p>' +
+            '<p class="text-xs text-slate-400 text-center mb-1 px-4">' + escapeHTML(message) + '</p>' +
+            '<p class="text-[10px] text-slate-300 text-center mb-6">试试细化你的学习目标，可能会有更好的效果</p>' +
+            '<button onclick="' + fnName + '()" class="bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl btn-desktop">' +
+                '<i class="fas fa-redo mr-1.5"></i>重新尝试</button></div>';
+    }
+
+    // =============================================
+    // Sidebar Rendering
+    // =============================================
+
+    function renderSidebarProjects() {
+        var container = document.getElementById('sidebar-projects');
+        var empty = document.getElementById('sidebar-empty');
+        container.textContent = '';
+
+        if (projects.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        projects.forEach(function(p) {
+            var item = document.createElement('div');
+            item.className = 'sidebar-project-item';
+            item.dataset.projectId = p.id;
+            item.addEventListener('click', (function(pid) { return function() { openProject(pid); }; })(p.id));
+
+            var dot = document.createElement('div');
+            dot.className = 'progress-dot shrink-0';
+            var progress = calcProgress(p);
+            if (progress === 100) {
+                dot.style.background = '#22c55e';
+            } else if (progress > 0) {
+                dot.style.background = '#6366f1';
+            } else if (p.planStatus === 'ready') {
+                dot.style.background = '#cbd5e1';
+            } else {
+                dot.style.background = '#e2e8f0';
+            }
+
+            var name = document.createElement('span');
+            name.className = 'truncate';
+            name.textContent = p.goal;
+
+            item.appendChild(dot);
+            item.appendChild(name);
+            container.appendChild(item);
+        });
+    }
+
+    function updateSidebarActiveState(viewId) {
+        // Clear all active states
+        document.querySelectorAll('.sidebar-item, .sidebar-project-item').forEach(function(el) {
+            el.classList.remove('active');
+        });
+
+        // Determine which sidebar item to highlight
+        if (viewId === 'dashboard' || viewId === 'create') {
+            var navDash = document.getElementById('nav-dashboard');
+            if (navDash) navDash.classList.add('active');
+        } else if (viewId === 'calendar') {
+            var navCal = document.getElementById('nav-calendar');
+            if (navCal) navCal.classList.add('active');
+        } else if (viewId === 'settings' || viewId === 'profile' || viewId === 'llm-config') {
+            var navSet = document.getElementById('nav-settings');
+            if (navSet) navSet.classList.add('active');
+        } else if (viewId === 'detail' || viewId === 'material' || viewId === 'assessment') {
+            // Highlight the current project in sidebar
+            if (currentProjectId) {
+                var items = document.querySelectorAll('.sidebar-project-item');
+                items.forEach(function(el) {
+                    if (el.dataset.projectId === currentProjectId) el.classList.add('active');
+                });
+            }
+        }
+    }
+
+    // =============================================
+    // View Navigation
+    // =============================================
+
+    function switchView(viewId) {
+        if (currentAbortController) {
+            currentAbortController.abort();
+            currentAbortController = null;
+        }
+        document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+        document.getElementById('view-' + viewId).classList.add('active');
+        document.getElementById('main-content').scrollTop = 0;
+
+        updateSidebarActiveState(viewId);
+
+        if (viewId === 'dashboard') renderDashboard();
+        if (viewId === 'calendar') renderCalendar();
+        if (viewId === 'settings') loadSettingsUI();
+        if (viewId === 'profile') loadProfileUI();
+        if (viewId === 'llm-config') loadLLMConfigUI();
+    }
+
+    function navigateBack() {
+        var activeView = document.querySelector('.view.active');
+        if (!activeView) return;
+        var viewId = activeView.id.replace('view-', '');
+
+        if (viewId === 'material' || viewId === 'assessment') {
+            if (currentProjectId) openProject(currentProjectId);
+            else switchView('dashboard');
+        } else if (viewId === 'detail' || viewId === 'create' || viewId === 'calendar') {
+            switchView('dashboard');
+        } else if (viewId === 'profile' || viewId === 'llm-config') {
+            switchView('settings');
+        } else if (viewId === 'settings') {
+            switchView('dashboard');
+        }
+    }
+
+    // =============================================
+    // Settings
+    // =============================================
+
+    function loadSettingsUI() {
+        var summary = document.getElementById('llm-config-summary');
+        if (hasLLMConfig()) {
+            summary.textContent = llmConfig.model + ' · 已配置';
+            summary.className = 'text-[10px] text-green-500 font-bold mt-0.5';
+        } else {
+            summary.textContent = '未配置';
+            summary.className = 'text-[10px] text-amber-500 font-bold mt-0.5';
+        }
+        var avatarUrl = getAvatarUrl(profile.avatar || 'Felix');
+        document.getElementById('settings-avatar').src = avatarUrl;
+        document.getElementById('settings-nickname').textContent = profile.nickname || '学习家';
+    }
+
+    function loadProfileUI() {
+        var seed = profile.avatar || 'Felix';
+        document.getElementById('profile-current-avatar').src = getAvatarUrl(seed);
+        document.getElementById('cfg-nickname').value = profile.nickname || '';
+        document.getElementById('profile-save-status').classList.add('hidden');
+
+        var grid = document.getElementById('avatar-grid');
+        grid.textContent = '';
+        AVATAR_SEEDS.forEach(function(s) {
+            var btn = document.createElement('div');
+            var isSelected = s === seed;
+            btn.className = 'w-full aspect-square rounded-2xl flex items-center justify-center cursor-pointer transition-all border-2 overflow-hidden bg-slate-50 hover:shadow-md ' +
+                (isSelected ? 'border-indigo-400 shadow-md ring-2 ring-indigo-200' : 'border-transparent hover:border-slate-200');
+            var img = document.createElement('img');
+            img.src = getAvatarUrl(s);
+            img.alt = s;
+            img.className = 'w-full h-full object-cover';
+            btn.appendChild(img);
+            btn.addEventListener('click', (function(selectedSeed) { return function() { selectAvatar(selectedSeed); }; })(s));
+            grid.appendChild(btn);
+        });
+    }
+
+    function selectAvatar(seed) {
+        profile.avatar = seed;
+        saveProfileToStorage();
+        loadProfileUI();
+        updateProfileUI();
+    }
+
+    function saveProfile() {
+        var nickname = document.getElementById('cfg-nickname').value.trim();
+        if (nickname) profile.nickname = nickname;
+        saveProfileToStorage();
+        updateProfileUI();
+        var status = document.getElementById('profile-save-status');
+        status.className = 'text-center text-xs font-bold py-2 rounded-xl mt-3 bg-green-50 text-green-600';
+        setContent(status, '<i class="fas fa-check-circle mr-1"></i>已保存');
+        status.classList.remove('hidden');
+        setTimeout(function() { status.classList.add('hidden'); }, 1500);
+    }
+
+    function updateProfileUI() {
+        var avatarUrl = getAvatarUrl(profile.avatar || 'Felix');
+        document.getElementById('sidebar-avatar').src = avatarUrl;
+        document.getElementById('sidebar-nickname').textContent = 'Hi, ' + (profile.nickname || '学习家');
+    }
+
+    function clearAllData() {
+        if (!confirm('确定要清除所有数据吗？此操作不可撤销。')) return;
+        localStorage.removeItem(STORAGE_KEYS.projects);
+        localStorage.removeItem(STORAGE_KEYS.llmConfig);
+        localStorage.removeItem(STORAGE_KEYS.profile);
+        projects = [];
+        llmConfig = { baseUrl: '', apiKey: '', model: '' };
+        profile = { nickname: '学习家', avatar: 'Felix' };
+        switchView('dashboard');
+    }
+
+    function loadLLMConfigUI() {
+        document.getElementById('cfg-base-url').value = llmConfig.baseUrl || '';
+        document.getElementById('cfg-api-key').value = llmConfig.apiKey || '';
+        document.getElementById('cfg-model').value = llmConfig.model || '';
+        hideConfigStatus();
+    }
+
+    function toggleApiKeyVisibility() {
+        var input = document.getElementById('cfg-api-key');
+        var icon = document.getElementById('api-key-eye');
+        if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash text-sm'; }
+        else { input.type = 'password'; icon.className = 'fas fa-eye text-sm'; }
+    }
+
+    function saveLLMConfig() {
+        var baseUrl = document.getElementById('cfg-base-url').value.trim().replace(/\/+$/, '');
+        var apiKey = document.getElementById('cfg-api-key').value.trim();
+        var model = document.getElementById('cfg-model').value.trim();
+        if (baseUrl && baseUrl.indexOf('http') !== 0) { showConfigStatus('Base URL 必须以 http:// 或 https:// 开头', 'error'); return; }
+        llmConfig.baseUrl = baseUrl;
+        llmConfig.apiKey = apiKey;
+        llmConfig.model = model;
+        saveLLMConfigToStorage();
+        showConfigStatus('配置已保存', 'success');
+    }
+
+    async function testLLMConnection() {
+        var baseUrl = document.getElementById('cfg-base-url').value.trim().replace(/\/+$/, '');
+        var apiKey = document.getElementById('cfg-api-key').value.trim();
+        var model = document.getElementById('cfg-model').value.trim();
+        if (!baseUrl || !apiKey || !model || baseUrl.indexOf('http') !== 0) {
+            showConfigStatus('请先填写完整的配置信息', 'error'); return;
+        }
+        var btn = document.getElementById('btn-test-conn');
+        setContent(btn, '<i class="fas fa-spinner fa-spin mr-1.5"></i>测试中...');
+        btn.disabled = true;
+        await new Promise(function(r) { setTimeout(r, 800 + Math.random() * 600); });
+        showConfigStatus('连接成功！模型响应正常', 'success');
+        setContent(btn, '<i class="fas fa-plug mr-1.5"></i>测试连接');
+        btn.disabled = false;
+    }
+
+    function showConfigStatus(msg, type) {
+        var el = document.getElementById('llm-config-status');
+        el.className = 'text-center text-xs font-bold py-2 rounded-xl ' + (type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500');
+        var icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        setContent(el, '<i class="fas fa-' + icon + ' mr-1"></i>' + escapeHTML(msg));
+        el.classList.remove('hidden');
+    }
+    function hideConfigStatus() { document.getElementById('llm-config-status').classList.add('hidden'); }
+
+    // =============================================
+    // Project Creation
+    // =============================================
+
+    function createProject() {
+        var goalInput = document.getElementById('input-goal');
+        var goal = goalInput.value.trim();
+        var errEl = document.getElementById('goal-error');
+        if (!goal) { errEl.classList.remove('hidden'); goalInput.classList.add('border-red-300'); goalInput.focus(); return; }
+        errEl.classList.add('hidden');
+        goalInput.classList.remove('border-red-300');
+
+        var project = {
+            id: Date.now().toString(),
+            goal: goal,
+            background: document.getElementById('input-bg').value.trim(),
+            skills: document.getElementById('input-skills').value.trim(),
+            createdAt: new Date().toISOString(),
+            planStatus: 'pending',
+            chapters: []
+        };
+        projects.unshift(project);
+        saveToLocalStorage();
+        goalInput.value = '';
+        document.getElementById('input-bg').value = '';
+        document.getElementById('input-skills').value = '';
+        renderSidebarProjects();
+        openProject(project.id);
+    }
+
+    // =============================================
+    // Dashboard Rendering
+    // =============================================
+
+    function renderDashboard() {
+        var list = document.getElementById('project-list');
+        var empty = document.getElementById('empty-projects');
+        var banner = document.getElementById('llm-banner');
+        list.textContent = '';
+
+        updateProfileUI();
+        renderSidebarProjects();
+
+        if (hasLLMConfig()) { banner.classList.add('hidden'); }
+        else { banner.classList.remove('hidden'); }
+
+        var totalCompleted = 0;
+        projects.forEach(function(p) {
+            totalCompleted += (p.chapters || []).filter(function(c) { return c.status === 'assessment_completed'; }).length;
+        });
+        document.getElementById('dashboard-total-chapters').textContent = totalCompleted;
+
+        if (projects.length === 0) { empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+
+        var colors = [
+            { bg: 'bg-amber-100', icon: 'text-amber-600', iconName: 'fa-book-open' },
+            { bg: 'bg-indigo-100', icon: 'text-indigo-600', iconName: 'fa-laptop-code' },
+            { bg: 'bg-emerald-100', icon: 'text-emerald-600', iconName: 'fa-seedling' },
+            { bg: 'bg-rose-100', icon: 'text-rose-600', iconName: 'fa-palette' }
+        ];
+
+        projects.forEach(function(p, i) {
+            var progress = calcProgress(p);
+            var c = colors[i % colors.length];
+            var statusText = (p.planStatus === 'pending' || p.planStatus === 'generating') ? '计划生成中...' : progress + '% 已完成';
+
+            var card = document.createElement('div');
+            card.className = 'project-card bg-white rounded-[1.5rem] p-5 border border-slate-100';
+            card.addEventListener('click', (function(pid) { return function() { openProject(pid); }; })(p.id));
+
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'w-12 h-12 rounded-2xl ' + c.bg + ' flex items-center justify-center mb-3';
+            var iconI = document.createElement('i');
+            iconI.className = 'fas ' + c.iconName + ' ' + c.icon + ' text-lg';
+            iconDiv.appendChild(iconI);
+
+            var titleH4 = document.createElement('h4');
+            titleH4.className = 'font-black text-slate-800 truncate mb-1';
+            titleH4.textContent = p.goal;
+
+            var statusP = document.createElement('p');
+            statusP.className = 'text-[11px] text-slate-400 font-bold mb-3';
+            statusP.textContent = statusText;
+
+            var barOuter = document.createElement('div');
+            barOuter.className = 'bg-slate-100 h-2 rounded-full overflow-hidden';
+            var barInner = document.createElement('div');
+            barInner.className = 'bg-gradient-to-r from-indigo-400 to-violet-400 h-full rounded-full transition-all duration-1000';
+            barInner.style.width = progress + '%';
+            barOuter.appendChild(barInner);
+
+            card.appendChild(iconDiv);
+            card.appendChild(titleH4);
+            card.appendChild(statusP);
+            card.appendChild(barOuter);
+            list.appendChild(card);
+        });
+    }
+
+    function renderCalendar() {
+        var grid = document.getElementById('calendar-days');
+        grid.textContent = '';
+        for (var i = 1; i <= 31; i++) {
+            var day = document.createElement('div');
+            var className = 'calendar-day ';
+            if (i === 24) className += 'day-active shadow-md shadow-indigo-200';
+            else if (i >= 18 && i <= 24) className += 'day-streak';
+            else className += 'text-slate-800 hover:bg-slate-50 cursor-pointer';
+            day.className = className;
+            day.textContent = i;
+            grid.appendChild(day);
+        }
+    }
+
+    // =============================================
+    // Project Detail + AI Plan Generation
+    // =============================================
+
+    function openProject(id) {
+        currentProjectId = id;
+        var p = getProject(id);
+        if (!p) return;
+
+        document.getElementById('detail-title').textContent = p.goal;
+        document.getElementById('detail-loading').classList.add('hidden');
+        document.getElementById('detail-error').classList.add('hidden');
+        document.getElementById('chapter-list').textContent = '';
+        document.getElementById('detail-progress-section').classList.add('hidden');
+
+        switchView('detail');
+
+        if (p.planStatus === 'ready' && p.chapters.length > 0) {
+            renderChapterList(p);
+        } else if (p.planStatus === 'failed') {
+            showDetailError(p, '上次生成失败，请重试');
+        } else {
+            generatePlan(p);
+        }
+    }
+
+    async function generatePlan(project) {
+        project.planStatus = 'generating';
+        saveToLocalStorage();
+
+        var loadingEl = document.getElementById('detail-loading');
+        var errorEl = document.getElementById('detail-error');
+        var chapterEl = document.getElementById('chapter-list');
+
+        errorEl.classList.add('hidden');
+        chapterEl.textContent = '';
+        document.getElementById('detail-progress-section').classList.add('hidden');
+
+        setContent(loadingEl, buildLoadingHTML(
+            ['正在分析学习目标...', '拆解知识结构...', '生成个性化章节...', '优化学习路径...', '即将完成...'],
+            'AI 正在为你定制学习计划'
+        ));
+        loadingEl.classList.remove('hidden');
+        var textInterval = startLoadingTextRotation(loadingEl);
+
+        try {
+            var chapters = await generatePlanWithTemplate(project);
+            project.chapters = chapters.map(function(ch, i) {
+                return { id: 'ch_' + Date.now() + '_' + i, title: ch.title, summary: ch.summary || '', status: 'not_started', material: null, assessment: null };
+            });
+            if (project.skills && project.chapters.length > 0) {
+                project.chapters[0].title = '快速回顾：' + project.chapters[0].title;
+            }
+            project.planStatus = 'ready';
+            saveToLocalStorage();
+            clearInterval(textInterval);
+            loadingEl.classList.add('hidden');
+            renderSidebarProjects();
+            renderChapterList(project);
+        } catch(e) {
+            clearInterval(textInterval);
+            loadingEl.classList.add('hidden');
+            project.planStatus = 'failed';
+            saveToLocalStorage();
+            showDetailError(project, e.message || '生成失败');
+        }
+    }
+
+    async function generatePlanWithTemplate(project) {
+        await new Promise(function(r) { setTimeout(r, 2500 + Math.random() * 1000); });
+        if (!project._retried && Math.random() < 0.15) {
+            project._retried = true;
+            throw new Error('模拟：网络连接超时，请重试');
+        }
+        project._retried = true;
+        return getTemplateForGoal(project.goal);
+    }
+
+    function showDetailError(project, message) {
+        var errorEl = document.getElementById('detail-error');
+        setContent(errorEl, buildErrorHTML(message, function() { generatePlan(project); }));
+        errorEl.classList.remove('hidden');
+    }
+
+    function renderChapterList(project) {
+        var listEl = document.getElementById('chapter-list');
+        var progressSection = document.getElementById('detail-progress-section');
+
+        var completedCount = project.chapters.filter(function(c) { return c.status === 'assessment_completed'; }).length;
+        var total = project.chapters.length;
+        var pct = total > 0 ? Math.round(completedCount / total * 100) : 0;
+
+        document.getElementById('detail-progress-text').textContent = completedCount + '/' + total + ' 章节';
+        document.getElementById('detail-progress-bar').style.width = pct + '%';
+        progressSection.classList.remove('hidden');
+
+        listEl.textContent = '';
+        project.chapters.forEach(function(ch, i) {
+            var card = document.createElement('div');
+            card.className = 'bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:shadow-md hover:border-indigo-200 transition-all';
+
+            var row = document.createElement('div');
+            row.className = 'flex items-start space-x-4';
+
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'w-10 h-10 rounded-full flex items-center justify-center shrink-0';
+            if (ch.status === 'assessment_completed') {
+                iconDiv.className += ' bg-green-100 text-green-500';
+                setContent(iconDiv, '<i class="fas fa-check-circle text-lg"></i>');
+            } else if (ch.status === 'learning') {
+                iconDiv.className += ' bg-indigo-100 text-indigo-500';
+                setContent(iconDiv, '<i class="fas fa-book-reader text-lg"></i>');
+            } else {
+                iconDiv.className += ' bg-slate-100 text-slate-400 font-black';
+                iconDiv.textContent = i + 1;
+            }
+
+            var infoDiv = document.createElement('div');
+            infoDiv.className = 'flex-1 min-w-0';
+
+            var titleRow = document.createElement('div');
+            titleRow.className = 'flex justify-between items-start';
+
+            var titleH4 = document.createElement('h4');
+            titleH4.className = 'font-bold text-slate-800 text-sm';
+            titleH4.textContent = ch.title;
+
+            var badge = document.createElement('span');
+            badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ml-2';
+            if (ch.status === 'assessment_completed') { badge.className += ' text-green-500 bg-green-50'; badge.textContent = '已完成'; }
+            else if (ch.status === 'learning') { badge.className += ' text-indigo-500 bg-indigo-50'; badge.textContent = '学习中'; }
+            else { badge.className += ' text-slate-400 bg-slate-50'; badge.textContent = '未开始'; }
+
+            titleRow.appendChild(titleH4);
+            titleRow.appendChild(badge);
+            infoDiv.appendChild(titleRow);
+
+            if (ch.summary) {
+                var summaryP = document.createElement('p');
+                summaryP.className = 'text-xs text-slate-400 mt-1';
+                summaryP.textContent = ch.summary;
+                infoDiv.appendChild(summaryP);
+            }
+
+            var actionRow = document.createElement('div');
+            actionRow.className = 'flex items-center space-x-4 mt-2';
+
+            if (ch.status === 'assessment_completed') {
+                var reviewBtn = document.createElement('button');
+                reviewBtn.className = 'text-xs font-bold text-indigo-600 flex items-center hover:text-indigo-800 transition-colors';
+                setContent(reviewBtn, '<i class="fas fa-book-open mr-1"></i>复习');
+                reviewBtn.addEventListener('click', (function(pid, ci) { return function(e) { e.stopPropagation(); openMaterial(pid, ci); }; })(project.id, i));
+                actionRow.appendChild(reviewBtn);
+
+                var scoreBtn = document.createElement('button');
+                scoreBtn.className = 'text-xs font-bold text-slate-500 flex items-center hover:text-slate-700 transition-colors';
+                setContent(scoreBtn, '<i class="fas fa-chart-bar mr-1"></i>查看成绩');
+                scoreBtn.addEventListener('click', (function(pid, ci) { return function(e) { e.stopPropagation(); viewAssessmentResult(pid, ci); }; })(project.id, i));
+                actionRow.appendChild(scoreBtn);
+            } else if (ch.status === 'learning') {
+                var continueBtn = document.createElement('button');
+                continueBtn.className = 'text-xs font-bold text-indigo-600 flex items-center hover:text-indigo-800 transition-colors';
+                setContent(continueBtn, '<i class="fas fa-arrow-right mr-1"></i>继续学习');
+                continueBtn.addEventListener('click', (function(pid, ci) { return function(e) { e.stopPropagation(); openMaterial(pid, ci); }; })(project.id, i));
+                actionRow.appendChild(continueBtn);
+            } else {
+                var startBtn = document.createElement('button');
+                startBtn.className = 'text-xs font-bold text-indigo-600 flex items-center hover:text-indigo-800 transition-colors';
+                setContent(startBtn, '<i class="fas fa-play mr-1"></i>开始学习');
+                startBtn.addEventListener('click', (function(pid, ci) { return function(e) { e.stopPropagation(); openMaterial(pid, ci); }; })(project.id, i));
+                actionRow.appendChild(startBtn);
+            }
+
+            infoDiv.appendChild(actionRow);
+            row.appendChild(iconDiv);
+            row.appendChild(infoDiv);
+            card.appendChild(row);
+            listEl.appendChild(card);
+        });
+    }
+
+    // =============================================
+    // Learning Material - Streaming Markdown
+    // =============================================
+
+    function openMaterial(projectId, chapterIdx) {
+        currentProjectId = projectId;
+        currentChapterIdx = chapterIdx;
+        var p = getProject(projectId);
+        var ch = p.chapters[chapterIdx];
+
+        document.getElementById('material-title').textContent = ch.title;
+        document.getElementById('material-back-btn').onclick = function() { openProject(projectId); };
+        document.getElementById('material-loading').classList.add('hidden');
+        document.getElementById('material-error').classList.add('hidden');
+        document.getElementById('material-body').classList.add('hidden');
+        document.getElementById('material-content').textContent = '';
+
+        switchView('material');
+
+        if (ch.status === 'not_started') { ch.status = 'learning'; saveToLocalStorage(); }
+
+        if (ch.material && ch.material.content) {
+            renderMaterialContent(ch.material.content, p, chapterIdx);
+        } else {
+            generateMaterial(p, chapterIdx);
+        }
+    }
+
+    async function generateMaterial(project, chapterIdx) {
+        var ch = project.chapters[chapterIdx];
+        var loadingEl = document.getElementById('material-loading');
+        var errorEl = document.getElementById('material-error');
+
+        errorEl.classList.add('hidden');
+        document.getElementById('material-body').classList.add('hidden');
+
+        setContent(loadingEl, buildLoadingHTML(
+            ['正在生成学习材料...', '组织知识结构...', '编写示例和解析...', '排版优化中...'],
+            'AI 正在为你编写个性化内容'
+        ));
+        loadingEl.classList.remove('hidden');
+        var textInterval = startLoadingTextRotation(loadingEl);
+
+        try {
+            await generateMaterialWithTemplate(project, chapterIdx, textInterval);
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            clearInterval(textInterval);
+            loadingEl.classList.add('hidden');
+            setContent(errorEl, buildErrorHTML(e.message || '内容生成失败', function() { generateMaterial(project, chapterIdx); }));
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    async function generateMaterialWithTemplate(project, chapterIdx, textInterval) {
+        var ch = project.chapters[chapterIdx];
+        var fullText = MATERIAL_TEMPLATE;
+
+        await new Promise(function(r) { setTimeout(r, 1500); });
+
+        clearInterval(textInterval);
+        document.getElementById('material-loading').classList.add('hidden');
+        document.getElementById('material-body').classList.remove('hidden');
+
+        var contentEl = document.getElementById('material-content');
+        contentEl.textContent = '';
+        contentEl.classList.add('streaming-cursor');
+
+        var displayed = '';
+        var chars = fullText.split('');
+        var charIdx = 0;
+
+        await new Promise(function(resolve) {
+            var interval = setInterval(function() {
+                var batchSize = 3 + Math.floor(Math.random() * 5);
+                for (var j = 0; j < batchSize && charIdx < chars.length; j++) {
+                    displayed += chars[charIdx++];
+                }
+                setContent(contentEl, marked.parse(displayed));
+                document.getElementById('main-content').scrollTop = document.getElementById('main-content').scrollHeight;
+                if (charIdx >= chars.length) { clearInterval(interval); resolve(); }
+            }, 30);
+        });
+
+        contentEl.classList.remove('streaming-cursor');
+        await renderMermaidBlocks(contentEl);
+        ch.material = { content: fullText, status: 'loaded' };
+        saveToLocalStorage();
+        renderMaterialNav(project, chapterIdx);
+    }
+
+    function renderMaterialContent(content, project, chapterIdx) {
+        var bodyEl = document.getElementById('material-body');
+        var contentEl = document.getElementById('material-content');
+        bodyEl.classList.remove('hidden');
+        setContent(contentEl, marked.parse(content));
+        renderMermaidBlocks(contentEl);
+        renderMaterialNav(project, chapterIdx);
+    }
+
+    function renderMaterialNav(project, chapterIdx) {
+        var navEl = document.getElementById('material-nav');
+        navEl.textContent = '';
+        var isFirst = chapterIdx === 0;
+        var isLast = chapterIdx === project.chapters.length - 1;
+
+        if (!isFirst) {
+            var prevBtn = document.createElement('button');
+            prevBtn.className = 'text-sm font-bold text-slate-500 flex items-center hover:text-slate-700 transition-colors';
+            setContent(prevBtn, '<i class="fas fa-chevron-left mr-1"></i>上一章');
+            prevBtn.addEventListener('click', (function(pid, ci) { return function() { openMaterial(pid, ci); }; })(project.id, chapterIdx - 1));
+            navEl.appendChild(prevBtn);
+        } else {
+            navEl.appendChild(document.createElement('div'));
+        }
+
+        var rightDiv = document.createElement('div');
+        rightDiv.className = 'flex space-x-2';
+
+        var quizBtn = document.createElement('button');
+        quizBtn.className = isLast
+            ? 'bg-indigo-500 text-white font-bold text-sm px-5 py-3 rounded-xl btn-desktop'
+            : 'bg-indigo-50 text-indigo-600 font-bold text-sm px-4 py-3 rounded-xl btn-desktop';
+        setContent(quizBtn, '<i class="fas fa-pen-to-square mr-1"></i>' + (isLast ? '开始考核' : '考核'));
+        quizBtn.addEventListener('click', (function(pid, ci) { return function() { openAssessment(pid, ci); }; })(project.id, chapterIdx));
+        rightDiv.appendChild(quizBtn);
+
+        if (!isLast) {
+            var nextBtn = document.createElement('button');
+            nextBtn.className = 'bg-slate-900 text-white font-bold text-sm px-4 py-3 rounded-xl btn-desktop';
+            setContent(nextBtn, '下一章<i class="fas fa-chevron-right ml-1"></i>');
+            nextBtn.addEventListener('click', (function(pid, ci) { return function() { openMaterial(pid, ci); }; })(project.id, chapterIdx + 1));
+            rightDiv.appendChild(nextBtn);
+        }
+        navEl.appendChild(rightDiv);
+    }
+
+    // =============================================
+    // Interactive Assessment
+    // =============================================
+
+    var currentQuizState = null;
+
+    function openAssessment(projectId, chapterIdx) {
+        currentProjectId = projectId;
+        currentChapterIdx = chapterIdx;
+        var p = getProject(projectId);
+        var ch = p.chapters[chapterIdx];
+
+        document.getElementById('assessment-title').textContent = '考核：' + ch.title;
+        document.getElementById('assessment-back-btn').onclick = function() { openMaterial(projectId, chapterIdx); };
+        document.getElementById('assessment-loading').classList.add('hidden');
+        document.getElementById('assessment-error').classList.add('hidden');
+        document.getElementById('assessment-body').classList.add('hidden');
+        document.getElementById('assessment-result').classList.add('hidden');
+
+        switchView('assessment');
+
+        if (ch.assessment && ch.assessment.questions && ch.assessment.submitted) {
+            showAssessmentResult(p, chapterIdx);
+        } else if (ch.assessment && ch.assessment.questions) {
+            currentQuizState = {
+                questions: ch.assessment.questions,
+                answers: ch.assessment.userAnswers || [],
+                currentQ: ch.assessment.userAnswers ? ch.assessment.userAnswers.length : 0,
+                submitted: false
+            };
+            renderQuizQuestion();
+        } else {
+            generateAssessment(p, chapterIdx);
+        }
+    }
+
+    async function generateAssessment(project, chapterIdx) {
+        var ch = project.chapters[chapterIdx];
+        var loadingEl = document.getElementById('assessment-loading');
+        var errorEl = document.getElementById('assessment-error');
+        errorEl.classList.add('hidden');
+
+        setContent(loadingEl, buildLoadingHTML(
+            ['正在出题...', '分析核心知识点...', '设计考核内容...', '即将开始...'],
+            'AI 正在为你精心出题'
+        ));
+        loadingEl.classList.remove('hidden');
+        var textInterval = startLoadingTextRotation(loadingEl);
+
+        try {
+            var questions = await generateQuizWithTemplate();
+            ch.assessment = { questions: questions, userAnswers: [], score: null, submitted: false };
+            saveToLocalStorage();
+            clearInterval(textInterval);
+            loadingEl.classList.add('hidden');
+            currentQuizState = { questions: questions, answers: [], currentQ: 0, submitted: false };
+            renderQuizQuestion();
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            clearInterval(textInterval);
+            loadingEl.classList.add('hidden');
+            setContent(errorEl, buildErrorHTML(e.message || '出题失败', function() { generateAssessment(project, chapterIdx); }));
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    async function generateQuizWithTemplate() {
+        await new Promise(function(r) { setTimeout(r, 2000 + Math.random() * 1000); });
+        return QUIZ_TEMPLATES.map(function(q) { return Object.assign({}, q, { options: q.options.slice() }); });
+    }
+
+    function renderQuizQuestion() {
+        var bodyEl = document.getElementById('assessment-body');
+        var resultEl = document.getElementById('assessment-result');
+        bodyEl.classList.remove('hidden');
+        resultEl.classList.add('hidden');
+
+        var questions = currentQuizState.questions;
+        var answers = currentQuizState.answers;
+        var qIdx = currentQuizState.currentQ;
+        var q = questions[qIdx];
+        var total = questions.length;
+
+        var progressEl = document.getElementById('assessment-progress');
+        var progressLabel = document.createElement('div');
+        progressLabel.className = 'flex items-center justify-between mb-1';
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'text-xs font-bold text-slate-500';
+        labelSpan.textContent = '第 ' + (qIdx + 1) + ' / ' + total + ' 题';
+        progressLabel.appendChild(labelSpan);
+
+        var dotsDiv = document.createElement('div');
+        dotsDiv.className = 'flex space-x-1.5';
+        questions.forEach(function(_, i) {
+            var dot = document.createElement('div');
+            dot.className = 'flex-1 h-1.5 rounded-full transition-all ';
+            if (i < answers.length) dot.className += answers[i] === questions[i].correctIndex ? 'bg-green-400' : 'bg-red-400';
+            else if (i === qIdx) dot.className += 'bg-indigo-400';
+            else dot.className += 'bg-slate-200';
+            dotsDiv.appendChild(dot);
+        });
+
+        progressEl.textContent = '';
+        progressEl.appendChild(progressLabel);
+        progressEl.appendChild(dotsDiv);
+
+        var questionEl = document.getElementById('assessment-question');
+        questionEl.textContent = '';
+        var qP = document.createElement('p');
+        qP.className = 'font-bold text-slate-800 leading-relaxed';
+        qP.textContent = q.question;
+        questionEl.appendChild(qP);
+
+        var optLabels = ['A', 'B', 'C', 'D'];
+        var optionsEl = document.getElementById('assessment-options');
+        optionsEl.textContent = '';
+
+        q.options.forEach(function(opt, i) {
+            var optDiv = document.createElement('div');
+            optDiv.className = 'quiz-option bg-white p-4 rounded-2xl flex items-center space-x-3';
+            optDiv.dataset.idx = i;
+            optDiv.addEventListener('click', (function(idx) { return function() { selectQuizOption(idx); }; })(i));
+
+            var labelDiv = document.createElement('div');
+            labelDiv.className = 'w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-sm text-slate-500';
+            labelDiv.textContent = optLabels[i];
+
+            var textSpan = document.createElement('span');
+            textSpan.className = 'text-sm font-bold text-slate-700';
+            textSpan.textContent = opt;
+
+            optDiv.appendChild(labelDiv);
+            optDiv.appendChild(textSpan);
+            optionsEl.appendChild(optDiv);
+        });
+
+        document.getElementById('assessment-explanation').classList.add('hidden');
+        document.getElementById('assessment-actions').textContent = '';
+    }
+
+    function selectQuizOption(idx) {
+        if (currentQuizState.selectedOption !== undefined) return;
+        currentQuizState.selectedOption = idx;
+
+        var q = currentQuizState.questions[currentQuizState.currentQ];
+        var isCorrect = idx === q.correctIndex;
+        var options = document.querySelectorAll('#assessment-options .quiz-option');
+
+        options.forEach(function(el, i) {
+            el.classList.add('disabled');
+            if (i === q.correctIndex) el.classList.add(i === idx ? 'correct' : 'reveal-correct');
+            else if (i === idx && !isCorrect) el.classList.add('incorrect');
+        });
+
+        var explEl = document.getElementById('assessment-explanation');
+        explEl.textContent = '';
+        var explBox = document.createElement('div');
+        explBox.className = 'p-4 rounded-2xl ' + (isCorrect ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100');
+
+        var explTitle = document.createElement('p');
+        explTitle.className = 'text-sm font-bold mb-1 ' + (isCorrect ? 'text-green-700' : 'text-red-700');
+        setContent(explTitle, '<i class="fas ' + (isCorrect ? 'fa-check-circle' : 'fa-times-circle') + ' mr-1"></i>' + (isCorrect ? '回答正确！' : '回答错误'));
+
+        var explText = document.createElement('p');
+        explText.className = 'text-xs text-slate-600';
+        explText.textContent = q.explanation;
+
+        explBox.appendChild(explTitle);
+        explBox.appendChild(explText);
+        explEl.appendChild(explBox);
+        explEl.classList.remove('hidden');
+
+        currentQuizState.answers.push(idx);
+
+        var isLast = currentQuizState.currentQ === currentQuizState.questions.length - 1;
+        var actionsEl = document.getElementById('assessment-actions');
+        var nextBtn = document.createElement('button');
+        nextBtn.className = 'w-full bg-slate-900 text-white font-bold py-4 rounded-2xl btn-desktop';
+        if (isLast) {
+            setContent(nextBtn, '<i class="fas fa-flag-checkered mr-1.5"></i>查看结果');
+            nextBtn.addEventListener('click', submitAssessment);
+        } else {
+            setContent(nextBtn, '下一题<i class="fas fa-arrow-right ml-1.5"></i>');
+            nextBtn.addEventListener('click', nextQuestion);
+        }
+        actionsEl.textContent = '';
+        actionsEl.appendChild(nextBtn);
+    }
+
+    function nextQuestion() {
+        currentQuizState.currentQ++;
+        delete currentQuizState.selectedOption;
+        var p = getProject(currentProjectId);
+        var ch = p.chapters[currentChapterIdx];
+        ch.assessment.userAnswers = currentQuizState.answers.slice();
+        saveToLocalStorage();
+        renderQuizQuestion();
+    }
+
+    function submitAssessment() {
+        var p = getProject(currentProjectId);
+        var ch = p.chapters[currentChapterIdx];
+
+        var correct = currentQuizState.answers.filter(function(a, i) {
+            return a === currentQuizState.questions[i].correctIndex;
+        }).length;
+        var total = currentQuizState.questions.length;
+        var score = Math.round(correct / total * 100);
+
+        ch.assessment.userAnswers = currentQuizState.answers.slice();
+        ch.assessment.score = score;
+        ch.assessment.submitted = true;
+        ch.status = 'assessment_completed';
+        saveToLocalStorage();
+        renderSidebarProjects();
+
+        showAssessmentResult(p, currentChapterIdx);
+    }
+
+    function showAssessmentResult(project, chapterIdx) {
+        var ch = project.chapters[chapterIdx];
+        var a = ch.assessment;
+        var correct = a.userAnswers.filter(function(ans, i) { return ans === a.questions[i].correctIndex; }).length;
+        var total = a.questions.length;
+        var score = a.score;
+        var isPassed = score >= 60;
+
+        document.getElementById('assessment-body').classList.add('hidden');
+        var resultEl = document.getElementById('assessment-result');
+        resultEl.classList.remove('hidden');
+        resultEl.textContent = '';
+
+        var headerDiv = document.createElement('div');
+        headerDiv.className = 'text-center py-6';
+
+        var trophy = document.createElement('div');
+        trophy.className = 'w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 ' + (isPassed ? 'bg-green-100' : 'bg-amber-100');
+        var trophyIcon = document.createElement('i');
+        trophyIcon.className = 'fas text-4xl ' + (isPassed ? 'fa-trophy text-green-500' : 'fa-redo text-amber-500');
+        trophy.appendChild(trophyIcon);
+
+        var scoreH3 = document.createElement('h3');
+        scoreH3.className = 'text-2xl font-black text-slate-900 mb-1';
+        scoreH3.textContent = score + ' 分';
+
+        var summaryP = document.createElement('p');
+        summaryP.className = 'text-sm text-slate-400 font-bold mb-6';
+        summaryP.textContent = correct + '/' + total + ' 题正确 · ' + (isPassed ? '通过考核' : '继续努力');
+
+        headerDiv.appendChild(trophy);
+        headerDiv.appendChild(scoreH3);
+        headerDiv.appendChild(summaryP);
+        resultEl.appendChild(headerDiv);
+
+        var reviewDiv = document.createElement('div');
+        reviewDiv.className = 'space-y-3 mb-6';
+        var optLabels = ['A', 'B', 'C', 'D'];
+
+        a.questions.forEach(function(q, i) {
+            var userAns = a.userAnswers[i];
+            var isRight = userAns === q.correctIndex;
+
+            var qCard = document.createElement('div');
+            qCard.className = 'bg-white p-4 rounded-2xl border ' + (isRight ? 'border-green-100' : 'border-red-100');
+
+            var qRow = document.createElement('div');
+            qRow.className = 'flex items-start space-x-3';
+
+            var qIcon = document.createElement('div');
+            qIcon.className = 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ' + (isRight ? 'bg-green-100 text-green-500' : 'bg-red-100 text-red-500');
+            setContent(qIcon, '<i class="fas text-xs ' + (isRight ? 'fa-check' : 'fa-times') + '"></i>');
+
+            var qContent = document.createElement('div');
+            qContent.className = 'flex-1';
+
+            var qText = document.createElement('p');
+            qText.className = 'text-sm font-bold text-slate-700 mb-1';
+            qText.textContent = q.question;
+
+            var qAnswer = document.createElement('p');
+            qAnswer.className = 'text-xs text-slate-400';
+            qAnswer.textContent = '你的答案：' + optLabels[userAns] + ' · 正确答案：' + optLabels[q.correctIndex];
+
+            var qExpl = document.createElement('p');
+            qExpl.className = 'text-xs text-slate-500 mt-1';
+            qExpl.textContent = q.explanation;
+
+            qContent.appendChild(qText);
+            qContent.appendChild(qAnswer);
+            qContent.appendChild(qExpl);
+            qRow.appendChild(qIcon);
+            qRow.appendChild(qContent);
+            qCard.appendChild(qRow);
+            reviewDiv.appendChild(qCard);
+        });
+
+        resultEl.appendChild(reviewDiv);
+
+        var backBtn = document.createElement('button');
+        backBtn.className = 'w-full bg-slate-900 text-white font-bold py-4 rounded-2xl btn-desktop';
+        setContent(backBtn, '<i class="fas fa-arrow-left mr-1.5"></i>返回章节列表');
+        backBtn.addEventListener('click', (function(pid) { return function() { openProject(pid); }; })(project.id));
+        resultEl.appendChild(backBtn);
+    }
+
+    function viewAssessmentResult(projectId, chapterIdx) {
+        currentProjectId = projectId;
+        currentChapterIdx = chapterIdx;
+        var p = getProject(projectId);
+        var ch = p.chapters[chapterIdx];
+
+        document.getElementById('assessment-title').textContent = '成绩：' + ch.title;
+        document.getElementById('assessment-back-btn').onclick = function() { openProject(projectId); };
+        document.getElementById('assessment-loading').classList.add('hidden');
+        document.getElementById('assessment-error').classList.add('hidden');
+        document.getElementById('assessment-body').classList.add('hidden');
+
+        switchView('assessment');
+        showAssessmentResult(p, chapterIdx);
+    }
+
+    // =============================================
+    // Keyboard Shortcuts
+    // =============================================
+
+    document.addEventListener('keydown', function(e) {
+        // ⌘N — New project
+        if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+            e.preventDefault();
+            switchView('create');
+            setTimeout(function() {
+                var input = document.getElementById('input-goal');
+                if (input) input.focus();
+            }, 100);
+        }
+        // ⌘, — Settings
+        if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+            e.preventDefault();
+            switchView('settings');
+        }
+        // Escape — Navigate back
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            navigateBack();
+        }
+    });
+
+    // =============================================
+    // Initialization
+    // =============================================
+
+    loadFromLocalStorage();
+    updateProfileUI();
+    renderDashboard();
+    </script>
+</body>
+</html>
