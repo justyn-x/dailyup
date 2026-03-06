@@ -46,6 +46,7 @@ bump:
 clean:
 	rm -rf dist
 	rm -rf src-tauri/target
+	rm -f tsconfig.tsbuildinfo
 
 clean-all: clean
 	rm -rf node_modules
