@@ -42,7 +42,7 @@ DailyUp is an AI-driven learning planner. Users describe a learning goal, AI gen
 ### Runtime Stack
 
 - **Tauri 2.0** desktop shell wrapping a React 19 SPA
-- **Dexie.js** for IndexedDB (tables: `projects`, `chapters`)
+- **Dexie.js** for IndexedDB (tables: `projects`, `chapters`); schema defined in `src/db/index.ts`
 - **Zustand** stores with `persist` middleware for config/profile → localStorage
 - **Vercel AI SDK** (`streamText` / `generateText` + `Output.object()` with Zod schemas) for LLM calls
 - **Tailwind CSS 4** — CSS-first config via `@theme` in `src/index.css`, no `tailwind.config`
@@ -67,9 +67,10 @@ The provider factory uses `@ai-sdk/openai-compatible` and calls the user-configu
 ### Data Flow
 
 ```
-Zustand stores (localStorage)     Dexie (IndexedDB)
-├── llmConfigStore (API config)   ├── projects: id, goal, background, skills, planStatus
-└── profileStore (nickname/avatar)└── chapters: id, projectId, orderIndex, title, material, assessment, status
+Zustand stores (localStorage)        Dexie (IndexedDB)
+├── llmConfigStore (API config)      ├── projects: id, goal, background, skills, createdAt, planStatus
+├── profileStore (nickname/avatar)   └── chapters: id, projectId, orderIndex, title, summary, status,
+└── uiStore (streaming state, NOT persisted)          material, assessment, completedAt
 ```
 
 Dexie hooks (`useLiveQuery`) in `src/hooks/` provide reactive data binding — components auto-update when DB changes.
@@ -77,6 +78,11 @@ Dexie hooks (`useLiveQuery`) in `src/hooks/` provide reactive data binding — c
 ### Routing
 
 All 9 routes are nested under `<DesktopLayout>` (sidebar + scrollable main area) in `src/App.tsx`. Key routes: `/create`, `/project/:id`, `/project/:pid/chapter/:cid/material`, `/project/:pid/chapter/:cid/assessment`.
+
+### Deployment
+
+- **Desktop**: Tauri builds via CI (see Releasing above)
+- **Web**: Vercel with SPA rewrite configured in `vercel.json` (`/(.*) → /index.html`)
 
 ### UI Language
 
@@ -90,3 +96,7 @@ The entire UI and all AI prompts are in Chinese (简体中文).
 - **TypeScript**: Strict mode with `noUnusedLocals` and `noUnusedParameters`
 - **Package manager**: pnpm
 - **Styling**: Tailwind utility classes; custom animations and `.material-content` markdown styles defined in `src/index.css`
+
+## Gotchas
+
+- **Unused `react-markdown` dep**: `react-markdown` and `remark-gfm` are in `package.json` but unused — `marked` is used everywhere instead. Safe to remove.
