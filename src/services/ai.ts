@@ -11,16 +11,27 @@ import {
   buildAssessmentUserPrompt,
 } from '../lib/prompts';
 
-function getProvider(config: LLMConfig) {
-  const realBaseUrl = config.baseUrl;
+// In dev mode (http://localhost), requests go through the Vite CORS proxy.
+// In production Tauri (tauri://localhost), requests go directly — no CORS restriction.
+const useProxy = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 
+function getProvider(config: LLMConfig) {
+  if (!useProxy) {
+    // Production: call the LLM API directly
+    return createOpenAICompatible({
+      name: 'user-llm',
+      baseURL: config.baseUrl.replace(/\/$/, ''),
+      apiKey: config.apiKey,
+    });
+  }
+
+  // Dev mode: route through Vite CORS proxy
+  const realBaseUrl = config.baseUrl;
   return createOpenAICompatible({
     name: 'user-llm',
-    // Route through local proxy to avoid CORS
     baseURL: `${window.location.origin}/llm-proxy`,
     apiKey: config.apiKey,
     fetch: (url, init) => {
-      // Rewrite the URL: extract the path after /llm-proxy and append to real base URL
       const parsedUrl = new URL(url as string, window.location.origin);
       const pathAfterProxy = parsedUrl.pathname.replace('/llm-proxy', '');
       const targetUrl = realBaseUrl.replace(/\/$/, '') + pathAfterProxy;

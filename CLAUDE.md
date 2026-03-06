@@ -5,17 +5,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-make dev            # Vite dev server (port 1420)
-make tauri          # Tauri desktop dev (compiles Rust + launches app)
-make build          # Frontend production build (tsc -b && vite build)
-make tauri-build    # Tauri release package
-make typecheck      # TypeScript type check only
-make clean          # Remove dist/ and src-tauri/target/
-make clean-all      # Above + node_modules + lockfile
-make install        # pnpm install
+make dev              # Vite dev server (port 1420)
+make tauri            # Tauri desktop dev (compiles Rust + launches app)
+make build            # Frontend production build (tsc -b && vite build)
+make tauri-build      # Tauri release package
+make tauri-build-debug # Debug mode build (faster, for testing packaging)
+make typecheck        # TypeScript type check only
+make clean            # Remove dist/ and src-tauri/target/
+make clean-all        # Above + node_modules + lockfile
+make install          # pnpm install
+make version          # Check version consistency across package.json / tauri.conf.json / Cargo.toml
+make bump V=x.y.z    # Bump version in all three files
 ```
 
 No test framework is configured yet.
+
+## Releasing
+
+Version lives in three files that must stay in sync: `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
+
+```bash
+make bump V=0.2.0
+git add -A && git commit -m "chore: bump version to 0.2.0"
+git tag v0.2.0
+git push origin main --tags   # triggers CI → builds macOS (arm64 + x64) + Windows → GitHub Release
+```
+
+- **Local build**: `make tauri-build` produces `src-tauri/target/release/bundle/dmg/*.dmg` (macOS)
+- **CI**: `.github/workflows/release.yml` runs on `v*` tags — creates a draft release, builds all platforms in parallel, then publishes
+- **No code signing** is configured (personal project); macOS users will need to right-click → Open on first launch
 
 ## Architecture
 
