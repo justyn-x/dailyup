@@ -129,7 +129,7 @@ export function MaterialPage() {
         <button
           onClick={() => {
             if (abortRef.current) abortRef.current.abort();
-            navigate(`/project/${projectId}`);
+            navigate(`/project/${projectId}`, { replace: true });
           }}
           className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
         >
@@ -168,7 +168,7 @@ export function MaterialPage() {
           />
           <div className="mt-8 mb-4 pt-6 border-t border-slate-100 flex justify-between items-center">
             <button
-              onClick={() => navigate(`/project/${projectId}`)}
+              onClick={() => navigate(`/project/${projectId}`, { replace: true })}
               className="text-slate-400 text-sm font-bold hover:text-slate-600 transition-colors"
             >
               <FontAwesomeIcon icon="arrow-left" className="mr-1" />

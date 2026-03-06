@@ -124,7 +124,7 @@ export function AssessmentPage() {
       <div className="max-w-[640px] mx-auto">
         <header className="flex items-center mb-4">
           <button
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(`/project/${projectId}`, { replace: true })}
             className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
           >
             <FontAwesomeIcon icon="arrow-left" />
@@ -145,7 +145,7 @@ export function AssessmentPage() {
       <div className="max-w-[640px] mx-auto">
         <header className="flex items-center mb-4">
           <button
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(`/project/${projectId}`, { replace: true })}
             className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
           >
             <FontAwesomeIcon icon="arrow-left" />
@@ -167,7 +167,7 @@ export function AssessmentPage() {
       <div className="max-w-[640px] mx-auto">
         <header className="flex items-center mb-6">
           <button
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(`/project/${projectId}`, { replace: true })}
             className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
           >
             <FontAwesomeIcon icon="arrow-left" />
@@ -218,7 +218,7 @@ export function AssessmentPage() {
 
         <div className="mt-6 mb-4">
           <button
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(`/project/${projectId}`, { replace: true })}
             className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl transition-all hover:opacity-90 hover:-translate-y-px hover:shadow-lg active:translate-y-0"
           >
             返回章节列表
@@ -239,7 +239,7 @@ export function AssessmentPage() {
     <div className="max-w-[640px] mx-auto">
       <header className="flex items-center mb-4">
         <button
-          onClick={() => navigate(`/project/${projectId}`)}
+          onClick={() => navigate(`/project/${projectId}`, { replace: true })}
           className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           <FontAwesomeIcon icon="arrow-left" />

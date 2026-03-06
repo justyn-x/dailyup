@@ -29,7 +29,7 @@ export function CreateProjectPage() {
       planStatus: 'pending',
     });
 
-    navigate(`/project/${id}`);
+    navigate(`/project/${id}`, { replace: true });
   }
 
   return (
