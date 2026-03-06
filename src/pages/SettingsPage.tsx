@@ -25,7 +25,13 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-[560px] mx-auto">
-      <header className="mb-8">
+      <header className="mb-8 flex items-center gap-3">
+        <button
+          onClick={() => navigate('/')}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors sm:hidden"
+        >
+          <FontAwesomeIcon icon="arrow-left" />
+        </button>
         <h2 className="text-2xl font-extrabold text-slate-900">设置</h2>
       </header>
 

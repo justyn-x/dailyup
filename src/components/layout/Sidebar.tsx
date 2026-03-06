@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { NavLink, useLocation, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useProjects } from '../../hooks/useProjects';
@@ -9,15 +10,24 @@ function getAvatarUrl(seed: string) {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 }
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const projects = useProjects();
   const { nickname, avatar } = useProfileStore();
   const location = useLocation();
 
   const isSettingsActive = location.pathname.startsWith('/settings');
 
+  // Auto-close mobile drawer on navigation
+  const prevPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      onClose?.();
+    }
+  }, [location.pathname, onClose]);
+
   return (
-    <aside className="w-[220px] shrink-0 flex flex-col py-4 border-r border-slate-100/60 bg-[rgba(248,249,253,0.8)] backdrop-blur-[12px] overflow-y-auto scrollbar-hide">
+    <aside className="w-[260px] sm:w-[220px] shrink-0 flex flex-col py-4 border-r border-slate-100/60 bg-[rgba(248,249,253,0.8)] backdrop-blur-[12px] overflow-y-auto scrollbar-hide h-full">
       {/* User area */}
       <NavLink
         to="/settings/profile"

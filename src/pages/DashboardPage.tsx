@@ -4,17 +4,38 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useProjects } from '../hooks/useProjects';
 import { useChapters } from '../hooks/useChapters';
 import { useLLMConfigStore } from '../stores/llmConfigStore';
+import { useProfileStore } from '../stores/profileStore';
 import { calculateProgress } from '../lib/utils';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { db } from '../db';
+
+function getAvatarUrl(seed: string) {
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+}
 
 export function DashboardPage() {
   const projects = useProjects();
   const isConfigured = useLLMConfigStore((s) => s.isConfigured);
   const navigate = useNavigate();
+  const { nickname, avatar } = useProfileStore();
 
   return (
     <div className="max-w-[800px] mx-auto">
+      {/* Mobile greeting — hidden on desktop */}
+      <div className="flex items-center justify-between mb-4 sm:hidden">
+        <div>
+          <p className="text-xl font-extrabold text-slate-900">Hi, {nickname}</p>
+          <p className="text-xs text-slate-400 font-bold mt-0.5">今天也是进步的一天</p>
+        </div>
+        <Link to="/settings">
+          <img
+            className="w-10 h-10 rounded-full bg-indigo-50 object-cover"
+            src={getAvatarUrl(avatar)}
+            alt="avatar"
+          />
+        </Link>
+      </div>
+
       {/* Hero card */}
       <div className="relative mb-8">
         <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-[2rem] p-8 text-white shadow-lg shadow-indigo-200/50 text-center">
@@ -69,7 +90,7 @@ export function DashboardPage() {
 
       {/* Projects grid */}
       {projects && projects.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {projects.map((p) => (
             <ProjectCard key={p.id} projectId={p.id} goal={p.goal} planStatus={p.planStatus} />
           ))}
@@ -135,19 +156,34 @@ function ProjectCard({
       onClick={() => navigate(`/project/${projectId}`)}
       className="bg-white rounded-[1.5rem] p-5 border border-slate-100 cursor-pointer transition-all hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:border-indigo-200"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+      {/* Desktop: vertical card layout */}
+      <div className="hidden sm:block">
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+            <FontAwesomeIcon icon="book" className="text-indigo-400" />
+          </div>
+          <span className={`text-[10px] font-bold ${statusColor}`}>{statusText}</span>
+        </div>
+        <h4 className="text-sm font-extrabold text-slate-800 mb-3 line-clamp-2">{goal}</h4>
+        {planStatus === 'ready' && (
+          <>
+            <ProgressBar progress={progress} />
+            <p className="text-right text-[10px] font-bold text-slate-400 mt-1.5">{progress}%</p>
+          </>
+        )}
+      </div>
+
+      {/* Mobile: horizontal list layout */}
+      <div className="flex items-center gap-4 sm:hidden">
+        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
           <FontAwesomeIcon icon="book" className="text-indigo-400" />
         </div>
-        <span className={`text-[10px] font-bold ${statusColor}`}>{statusText}</span>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-extrabold text-slate-800 truncate">{goal}</h4>
+          <span className={`text-[10px] font-bold ${statusColor}`}>{statusText}</span>
+        </div>
+        <FontAwesomeIcon icon="chevron-right" className="text-slate-300 text-xs shrink-0" />
       </div>
-      <h4 className="text-sm font-extrabold text-slate-800 mb-3 line-clamp-2">{goal}</h4>
-      {planStatus === 'ready' && (
-        <>
-          <ProgressBar progress={progress} />
-          <p className="text-right text-[10px] font-bold text-slate-400 mt-1.5">{progress}%</p>
-        </>
-      )}
     </div>
   );
 }

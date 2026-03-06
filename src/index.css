@@ -79,6 +79,11 @@ body {
   50% { opacity: 0; }
 }
 
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
 .animate-fade-in { animation: fadeIn 0.25s ease-out; }
 .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
 .animate-float { animation: float 3s ease-in-out infinite; }
@@ -86,6 +91,7 @@ body {
 .animate-progress-crawl { animation: progressCrawl 12s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .animate-text-enter { animation: textFadeIn 0.4s ease-out forwards; }
 .animate-text-exit { animation: textFadeOut 0.3s ease-in forwards; }
+.animate-slide-in-left { animation: slideInLeft 0.2s ease-out; }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
   background-size: 200% 100%;
@@ -125,6 +131,13 @@ body {
 .material-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
 .material-content th { background: #f8fafc; font-weight: 700; text-align: left; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; }
 .material-content td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; }
+
+/* Glass dock (mobile bottom bar) */
+.glass-dock {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
 
 /* Quiz options */
 .quiz-option {
