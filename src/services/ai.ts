@@ -97,11 +97,18 @@ export async function generateAssessment(
 }
 
 export async function testConnection(config: LLMConfig) {
-  const provider = getProvider(config);
-  const result = await generateText({
-    model: provider(config.model),
-    prompt: '请回复"连接成功"四个字。',
-    maxTokens: 20,
-  });
-  return result.text;
+  try {
+    const provider = getProvider(config);
+    const result = await generateText({
+      model: provider(config.model),
+      prompt: '请回复"连接成功"四个字。',
+      maxTokens: 20,
+    });
+    return result.text;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`连接失败: ${error.message}`);
+    }
+    throw new Error('连接失败: 未知错误');
+  }
 }
