@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useProject } from '../hooks/useProjects';
 import { useChapters } from '../hooks/useChapters';
@@ -14,7 +14,6 @@ import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const project = useProject(projectId);
   const chapters = useChapters(projectId);
   const llmConfig = useLLMConfigStore();
@@ -68,7 +67,7 @@ export function ProjectDetailPage() {
     <div className="max-w-[720px] mx-auto">
       <header className="flex items-center mb-4">
         <button
-          onClick={() => location.key !== 'default' ? navigate(-1) : navigate('/')}
+          onClick={() => navigate('/')}
           className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           <FontAwesomeIcon icon="arrow-left" />
