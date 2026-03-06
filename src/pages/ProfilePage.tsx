@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useProfileStore } from '../stores/profileStore';
 
@@ -14,6 +14,7 @@ function getAvatarUrl(seed: string) {
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { nickname, avatar, setProfile } = useProfileStore();
   const [localNickname, setLocalNickname] = useState(nickname);
   const [selectedSeed, setSelectedSeed] = useState(avatar);
@@ -34,7 +35,7 @@ export function ProfilePage() {
     <div className="max-w-[560px] mx-auto">
       <header className="flex items-center mb-8">
         <button
-          onClick={() => navigate('/settings')}
+          onClick={() => location.key !== 'default' ? navigate(-1) : navigate('/settings')}
           className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           <FontAwesomeIcon icon="arrow-left" />

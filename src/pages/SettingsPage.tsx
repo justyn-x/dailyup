@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useProfileStore } from '../stores/profileStore';
 import { useLLMConfigStore } from '../stores/llmConfigStore';
@@ -10,6 +10,7 @@ function getAvatarUrl(seed: string) {
 
 export function SettingsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { nickname, avatar } = useProfileStore();
   const llmConfig = useLLMConfigStore();
   const isConfigured = llmConfig.isConfigured();
@@ -27,7 +28,7 @@ export function SettingsPage() {
     <div className="max-w-[560px] mx-auto">
       <header className="mb-8 flex items-center gap-3">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => location.key !== 'default' ? navigate(-1) : navigate('/')}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors sm:hidden"
         >
           <FontAwesomeIcon icon="arrow-left" />

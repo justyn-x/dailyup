@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useLLMConfigStore } from '../stores/llmConfigStore';
 import { testConnection } from '../services/ai';
 
 export function LLMConfigPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { baseUrl, apiKey, model, setConfig } = useLLMConfigStore();
 
   const [localBaseUrl, setLocalBaseUrl] = useState(baseUrl);
@@ -46,7 +47,7 @@ export function LLMConfigPage() {
     <div className="max-w-[560px] mx-auto">
       <header className="flex items-center mb-8">
         <button
-          onClick={() => navigate('/settings')}
+          onClick={() => location.key !== 'default' ? navigate(-1) : navigate('/settings')}
           className="p-2 -ml-2 text-indigo-600 hover:text-indigo-800 transition-colors"
         >
           <FontAwesomeIcon icon="arrow-left" />
