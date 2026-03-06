@@ -79,11 +79,6 @@ body {
   50% { opacity: 0; }
 }
 
-@keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
 .animate-fade-in { animation: fadeIn 0.25s ease-out; }
 .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
 .animate-float { animation: float 3s ease-in-out infinite; }
@@ -91,7 +86,6 @@ body {
 .animate-progress-crawl { animation: progressCrawl 12s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .animate-text-enter { animation: textFadeIn 0.4s ease-out forwards; }
 .animate-text-exit { animation: textFadeOut 0.3s ease-in forwards; }
-.animate-slide-in-left { animation: slideInLeft 0.2s ease-out; }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
   background-size: 200% 100%;
