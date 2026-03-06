@@ -11,39 +11,11 @@ import {
   buildAssessmentUserPrompt,
 } from '../lib/prompts';
 
-// Only use the Vite CORS proxy on localhost dev server.
-// Tauri production (tauri://), Vercel deployment (https://), and other environments call LLM APIs directly.
-const useProxy = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
 function getProvider(config: LLMConfig) {
-  if (!useProxy) {
-    // Production: call the LLM API directly
-    return createOpenAICompatible({
-      name: 'user-llm',
-      baseURL: config.baseUrl.replace(/\/$/, ''),
-      apiKey: config.apiKey,
-    });
-  }
-
-  // Dev mode: route through Vite CORS proxy
-  const realBaseUrl = config.baseUrl;
   return createOpenAICompatible({
     name: 'user-llm',
-    baseURL: `${window.location.origin}/llm-proxy`,
+    baseURL: config.baseUrl.replace(/\/$/, ''),
     apiKey: config.apiKey,
-    fetch: (url, init) => {
-      const parsedUrl = new URL(url as string, window.location.origin);
-      const pathAfterProxy = parsedUrl.pathname.replace('/llm-proxy', '');
-      const targetUrl = realBaseUrl.replace(/\/$/, '') + pathAfterProxy;
-
-      return fetch(url, {
-        ...init,
-        headers: {
-          ...(init?.headers as Record<string, string>),
-          'X-Target-URL': targetUrl,
-        },
-      });
-    },
   });
 }
 

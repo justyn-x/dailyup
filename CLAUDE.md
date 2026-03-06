@@ -47,10 +47,6 @@ DailyUp is an AI-driven learning planner. Users describe a learning goal, AI gen
 - **Vercel AI SDK** (`streamText` / `generateText` + `Output.object()` with Zod schemas) for LLM calls
 - **Tailwind CSS 4** — CSS-first config via `@theme` in `src/index.css`, no `tailwind.config`
 
-### CORS Proxy (Dev Mode)
-
-In dev mode, LLM API calls route through a Vite middleware plugin (`llmProxyPlugin` in `vite.config.ts`). The frontend sends requests to `/llm-proxy` with an `X-Target-URL` header containing the real API endpoint. The proxy forwards the request, handles streaming, and strips duplicate CORS headers. This is necessary because Tauri dev mode loads from `http://localhost:1420`.
-
 ### Streaming Markdown (MaterialPage)
 
 `src/pages/MaterialPage.tsx` uses a high-performance pattern to render streaming LLM output:
@@ -66,7 +62,7 @@ Four functions, all single-turn LLM calls:
 - `generateAssessment` — structured output (`generateText` + Zod `assessmentSchema`) → quiz questions
 - `testConnection` — lightweight ping
 
-The provider factory uses `@ai-sdk/openai-compatible` with a custom `fetch` that rewrites URLs for the CORS proxy.
+The provider factory uses `@ai-sdk/openai-compatible` and calls the user-configured LLM API directly.
 
 ### Data Flow
 
