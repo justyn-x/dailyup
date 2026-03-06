@@ -11,9 +11,9 @@ import {
   buildAssessmentUserPrompt,
 } from '../lib/prompts';
 
-// In dev mode (http://localhost), requests go through the Vite CORS proxy.
-// In production Tauri (tauri://localhost), requests go directly — no CORS restriction.
-const useProxy = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+// Only use the Vite CORS proxy on localhost dev server.
+// Tauri production (tauri://), Vercel deployment (https://), and other environments call LLM APIs directly.
+const useProxy = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 function getProvider(config: LLMConfig) {
   if (!useProxy) {
